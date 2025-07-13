@@ -1,975 +1,588 @@
-// script.js
+// Custom Message Modal Logic
+const messageModalOverlay = document.getElementById('message-modal-overlay');
+const messageModalText = document.getElementById('message-modal-text');
+const messageModalClose = document.getElementById('message-modal-close');
 
-// --- 1. Variables Globales y Datos de Simulación ---
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'password';
+function showMessageModal(message) {
+    console.log("Mostrando modal con mensaje:", message); // Log para depuración
+    messageModalText.textContent = message;
+    messageModalOverlay.classList.remove('hidden');
+    messageModalOverlay.style.display = 'flex'; // Fuerza el display a flex
+}
 
-// Datos de conductores para simular logins de conductor
-const DRIVER_CREDENTIALS = [
-    { username: 'driver1', password: 'pass123', id: 'd001' },
-    { username: 'driver2', password: 'pass456', id: 'd002' },
-    { username: 'driver3', password: 'pass789', id: 'd003' }, // Conductor con vehículo asignado
-    { username: 'driver4', password: 'pass101', id: 'd004' }, // Conductor sin vehículo
+function hideMessageModal() {
+    console.log("Ocultando modal."); // Log para depuración
+    messageModalOverlay.classList.add('hidden');
+    messageModalOverlay.style.display = 'none'; // Fuerza el display a none
+}
+
+messageModalClose.addEventListener('click', hideMessageModal);
+
+messageModalOverlay.addEventListener('click', (event) => {
+    if (event.target === messageModalOverlay) {
+        hideMessageModal();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !messageModalOverlay.classList.contains('hidden')) {
+        hideMessageModal();
+    }
+});
+
+
+// Demo Data
+const USERS = [
+    { id: "u1", username: "admin", password: "admin123", role: "admin" },
+    { id: "u2", username: "conductor1", password: "demo123", role: "driver" },
+    { id: "u3", username: "conductor2", password: "demo456", role: "driver" },
 ];
 
-let currentUser = null; // Almacena el ID del usuario logueado (admin o driver ID)
-let currentRole = null; // 'admin' o 'driver'
+let vehicles = [
+    { id: "v1", plate: "ABC-123", driverId: "u2", bond: 500, fee: 150, lastService: "2025-06-01", status: "activo" },
+    { id: "v2", plate: "XYZ-789", driverId: "u3", bond: 600, fee: 160, lastService: "2025-05-15", status: "activo" },
+    { id: "v3", plate: "QWE-456", driverId: null, bond: 0, fee: 0, lastService: "2025-07-01", status: "disponible" },
+];
 
-let vehicles = [];
-let drivers = [];
-let accounts = []; // { id, driverId, vehicleId, period, calculatedAmount, finalAmount, deductions: [], status: 'pending'/'approved', approvalDate }
-let notifications = []; // Las notificaciones se compartirán pero se filtrarán por rol/usuario
+let drivers = [
+    { id: "u1", name: "Admin User", username: "admin", role: "admin", contact: "admin@drivetrack.com" },
+    { id: "u2", name: "Juan Pérez", username: "conductor1", role: "driver", contact: "juan.perez@example.com", status: "activo" },
+    { id: "u3", name: "María García", username: "conductor2", role: "driver", contact: "maria.garcia@example.com", status: "activo" },
+];
 
-// Cargar datos al iniciar desde LocalStorage o usar datos predefinidos
-function loadData() {
-    const storedVehicles = localStorage.getItem('drivetrack_vehicles');
-    const storedDrivers = localStorage.getItem('drivetrack_drivers');
-    const storedAccounts = localStorage.getItem('drivetrack_accounts');
-    const storedNotifications = localStorage.getItem('drivetrack_notifications');
+let accounts = [
+    { id: "a1", driverId: "u2", period: "2025-W27", amount: 1200, deductions: [{ description: "Multa", amount: 50, status: "pending" }], status: "pending" },
+    { id: "a2", driverId: "u3", period: "2025-W27", amount: 1300, deductions: [{ description: "Reparación menor", amount: 75, status: "approved" }], status: "approved" },
+    { id: "a3", driverId: "u2", period: "2025-W26", amount: 1100, deductions: [], status: "approved" },
+];
 
-    vehicles = storedVehicles ? JSON.parse(storedVehicles) : [
-        { id: 'v001', plate: 'ABC-123', driverId: 'd001', bond: 500, weeklyFee: 150, lastServiceDate: '2025-01-15', lastServiceMileage: 120000, serviceIntervalKm: 10000, serviceIntervalMonths: 6, status: 'ok' },
-        { id: 'v002', plate: 'DEF-456', driverId: 'd002', bond: 600, weeklyFee: 160, lastServiceDate: '2024-10-01', lastServiceMileage: 150000, serviceIntervalKm: 10000, serviceIntervalMonths: 6, status: 'warning' },
-        { id: 'v003', plate: 'GHI-789', driverId: 'd003', bond: 450, weeklyFee: 140, lastServiceDate: '2025-05-20', lastServiceMileage: 90000, serviceIntervalKm: 10000, serviceIntervalMonths: 6, status: 'ok' },
-        { id: 'v004', plate: 'JKL-012', driverId: null, bond: 550, weeklyFee: 155, lastServiceDate: '2024-06-01', lastServiceMileage: 180000, serviceIntervalKm: 10000, serviceIntervalMonths: 6, status: 'critical' },
-    ];
-    drivers = storedDrivers ? JSON.parse(storedDrivers) : [
-        { id: 'd001', name: 'Juan Pérez', contact: '55 1234 5678', status: 'active' },
-        { id: 'd002', name: 'María García', contact: '55 8765 4321', status: 'debt' },
-        { id: 'd003', name: 'Carlos López', contact: '55 1122 3344', status: 'active' },
-        { id: 'd004', name: 'Ana Ramírez', contact: '55 9988 7766', status: 'no-vehicle' },
-    ];
-    accounts = storedAccounts ? JSON.parse(storedAccounts) : [
-        { id: 'acc001', driverId: 'd001', vehicleId: 'v001', period: 'Semana 26 - 2025', calculatedAmount: 150, finalAmount: 150, deductions: [], status: 'pending' },
-        { id: 'acc002', driverId: 'd002', vehicleId: 'v002', period: 'Semana 26 - 2025', calculatedAmount: 160, finalAmount: 160, deductions: [{description: 'Multa tránsito', amount: 50}], status: 'pending' },
-        { id: 'acc003', driverId: 'd003', vehicleId: 'v003', period: 'Semana 25 - 2025', calculatedAmount: 140, finalAmount: 140, deductions: [], status: 'approved', approvalDate: '2025-07-01' },
-    ];
-    notifications = storedNotifications ? JSON.parse(storedNotifications) : [
-        { id: Date.now(), message: 'Bienvenido a DriveTrack.', timestamp: new Date().toLocaleString(), role: 'all' }
-    ];
-}
+// DOM Refs
+const loginContainer = document.getElementById("login-container");
+const appContainer = document.getElementById("main-app-container");
+const loginForm = document.getElementById("login-form");
+const loginMsg = document.getElementById("login-message");
 
-function saveData() {
-    localStorage.setItem('drivetrack_vehicles', JSON.stringify(vehicles));
-    localStorage.setItem('drivetrack_drivers', JSON.stringify(drivers));
-    localStorage.setItem('drivetrack_accounts', JSON.stringify(accounts));
-    localStorage.setItem('drivetrack_notifications', JSON.stringify(notifications));
-}
+const adminMenu = document.getElementById("admin-menu");
+const driverMenu = document.getElementById("driver-menu");
+const logoutButton = document.getElementById("logout-button");
 
-function generateUniqueId(prefix) {
-    return prefix + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-}
+const driverCarInfo = document.getElementById("driver-car-info");
+const driverAccInfo = document.getElementById("driver-account-info");
+const driverDeductList = document.getElementById("driver-deductions-list");
+const sendDeductionBtn = document.getElementById("send-deduction-btn");
 
-// Añadido 'role' al añadir notificación
-function addNotification(message, role = 'admin', userId = null) {
-    const newNotification = {
-        id: generateUniqueId('notif'),
-        message: message,
-        timestamp: new Date().toLocaleString(),
-        role: role, // 'admin', 'driver', 'all'
-        userId: userId // ID del conductor si es una notificación específica
-    };
-    notifications.unshift(newNotification); // Añadir al principio
-    if (notifications.length > 20) { // Mantener un historial más largo
-        notifications.pop();
+const vehiclesList = document.getElementById("vehicles-list");
+const driversList = document.getElementById("drivers-list");
+const accountsList = document.getElementById("accounts-list");
+
+// Admin Add/Edit fields
+const addVehiclePlate = document.getElementById("add-vehicle-plate");
+const addVehicleBond = document.getElementById("add-vehicle-bond");
+const addVehicleFee = document.getElementById("add-vehicle-fee");
+const addVehicleBtn = document.getElementById("add-vehicle-btn");
+
+const addDriverName = document.getElementById("add-driver-name");
+const addDriverUsername = document.getElementById("add-driver-username");
+const addDriverPassword = document.getElementById("add-driver-password");
+const addDriverBtn = document.getElementById("add-driver-btn");
+
+
+let currentUser = null;
+
+// Login
+loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const username = loginForm.username.value;
+    const password = loginForm.password.value;
+
+    const found = USERS.find(u => u.username === username && u.password === password);
+    if (!found) {
+        loginMsg.textContent = "Credenciales incorrectas";
+        return;
     }
-    updateNotificationDropdown(); // Actualiza el dropdown activo
-    saveData();
-}
+    loginMsg.textContent = "";
+    startSession(found);
+});
 
-// --- 2. Elementos del DOM ---
-const loginContainer = document.getElementById('login-container');
-const adminAppContainer = document.getElementById('admin-app-container'); // Nuevo
-const driverAppContainer = document.getElementById('driver-app-container'); // Nuevo
-const loginForm = document.getElementById('login-form');
-const loginMessage = document.getElementById('login-message');
+function startSession(user) {
+    currentUser = user;
+    loginContainer.classList.add("hidden");
+    loginContainer.style.display = 'none';
 
-// Admin Elements
-const logoutButtonAdmin = document.getElementById('logout-button-admin');
-const navLinksAdmin = document.querySelectorAll('#admin-app-container .nav-menu a');
-const appSectionsAdmin = document.querySelectorAll('#admin-app-container .app-section');
-const adminHeaderTitle = document.getElementById('admin-header-title');
-const notificationIconAdmin = document.querySelector('#admin-app-container .notification-icon');
-const notificationBadgeAdmin = document.getElementById('notification-badge-admin');
-const notificationDropdownAdmin = document.getElementById('notification-dropdown-admin');
-const notificationListAdmin = document.getElementById('notification-list-admin');
+    appContainer.classList.remove("hidden");
+    appContainer.style.display = 'flex';
 
-// Dashboard Elements (Admin)
-const totalCarsEl = document.getElementById('total-cars');
-const totalDriversEl = document.getElementById('total-drivers');
-const pendingAccountsEl = document.getElementById('pending-accounts');
-const upcomingServicesEl = document.getElementById('upcoming-services');
+    document.getElementById('mobile-menu-toggle').classList.remove('hidden');
 
-// Vehicles Elements (Admin)
-const addVehicleBtn = document.getElementById('add-vehicle-btn');
-const vehiclesTableBody = document.querySelector('#vehicles-table tbody');
-const addVehicleModal = document.getElementById('add-vehicle-modal');
-const addVehicleForm = document.getElementById('add-vehicle-form');
-const newDriverAssignSelect = document.getElementById('new-driver-assign');
-const closeVehicleModalBtn = addVehicleModal.querySelector('.close-modal-btn');
+    // Hide all main sections first
+    document.querySelectorAll(".app-section").forEach(sec => sec.classList.add("hidden"));
 
-// Drivers Elements (Admin)
-const addDriverBtn = document.getElementById('add-driver-btn');
-const driversTableBody = document.querySelector('#drivers-table tbody');
-const addDriverModal = document.getElementById('add-driver-modal');
-const addDriverForm = document.getElementById('add-driver-form');
-const closeDriverModalBtn = addDriverModal.querySelector('.close-modal-btn');
-
-// Accounts Elements (Admin)
-const pendingAccountsList = document.getElementById('pending-accounts-list');
-const approvedAccountsTableBody = document.querySelector('#approved-accounts-table tbody');
-const reviewAccountModal = document.getElementById('review-account-modal');
-const closeReviewAccountModalBtn = reviewAccountModal.querySelector('.close-modal-btn');
-const reviewAccountDriver = document.getElementById('review-account-driver');
-const reviewAccountPeriod = document.getElementById('review-account-period');
-const reviewAccountAmount = document.getElementById('review-account-amount');
-const deductionsList = document.getElementById('deductions-list');
-const newDeductionDesc = document.getElementById('new-deduction-desc');
-const newDeductionAmount = document.getElementById('new-deduction-amount');
-const addDeductionBtn = document.getElementById('add-deduction-btn');
-const approveAccountBtn = document.getElementById('approve-account-btn');
-const generateNewAccountsBtn = document.getElementById('generate-new-accounts-btn');
-
-let currentEditingAccount = null; // Para manejar la cuenta que se está editando
-
-// Alerts Elements (Admin)
-const maintenanceAlertsList = document.getElementById('maintenance-alerts-list');
-const noAlertsMessageAdmin = document.querySelector('#alerts-section .no-alerts-message');
-
-
-// --- Driver Elements (NUEVOS) ---
-const logoutButtonDriver = document.getElementById('logout-button-driver');
-const navLinksDriver = document.querySelectorAll('#driver-app-container .nav-menu a');
-const appSectionsDriver = document.querySelectorAll('#driver-app-container .app-section');
-const driverHeaderTitle = document.getElementById('driver-header-title');
-const currentDriverNameEl = document.getElementById('current-driver-name');
-const driverDashboardNameEl = document.getElementById('driver-dashboard-name');
-const notificationIconDriver = document.querySelector('#driver-app-container .notification-icon');
-const notificationBadgeDriver = document.getElementById('notification-badge-driver');
-const notificationDropdownDriver = document.getElementById('notification-dropdown-driver');
-const notificationListDriver = document.getElementById('notification-list-driver');
-const noNotificationsMessageDriver = document.querySelector('#driver-app-container .no-notifications');
-
-
-// Driver Dashboard Elements
-const driverPendingAccountsEl = document.getElementById('driver-pending-accounts');
-const driverUpcomingServiceEl = document.getElementById('driver-upcoming-service');
-
-// Driver Vehicle Elements
-const driverVehicleDetails = document.getElementById('driver-vehicle-details');
-const driverVehiclePlate = document.getElementById('driver-vehicle-plate');
-const driverVehicleBond = document.getElementById('driver-vehicle-bond');
-const driverVehicleFee = document.getElementById('driver-vehicle-fee');
-const driverVehicleLastService = document.getElementById('driver-vehicle-last-service');
-const driverVehicleLastMileage = document.getElementById('driver-vehicle-last-mileage');
-const driverVehicleStatus = document.getElementById('driver-vehicle-status');
-const noVehicleAssignedMessage = document.getElementById('no-vehicle-assigned');
-
-// Driver Accounts Elements
-const driverPendingAccountsList = document.getElementById('driver-pending-accounts-list');
-const driverApprovedAccountsTableBody = document.getElementById('driver-approved-accounts-table').querySelector('tbody');
-
-// Driver Alerts Elements
-const driverMaintenanceAlertsList = document.getElementById('driver-maintenance-alerts-list');
-const noAlertsMessageDriver = document.querySelector('#driver-alerts-section .no-alerts-message');
-
-
-// --- 3. Funciones de Renderizado y Lógica ---
-
-// --- Core UI & Navigation ---
-function showSection(sectionId, role) {
-    // Ocultar todos los contenedores de rol
-    adminAppContainer.classList.add('hidden');
-    driverAppContainer.classList.add('hidden');
-
-    // Ocultar todas las secciones dentro del rol activo
-    const currentAppSections = role === 'admin' ? appSectionsAdmin : appSectionsDriver;
-    currentAppSections.forEach(section => {
-        section.classList.add('hidden');
-    });
-
-    // Mostrar el contenedor de rol correcto
-    if (role === 'admin') {
-        adminAppContainer.classList.remove('hidden');
-        // Actualizar el título de la cabecera del admin
-        adminHeaderTitle.textContent = document.querySelector(`#${sectionId}`).querySelector('h2') ? document.querySelector(`#${sectionId}`).querySelector('h2').textContent : 'Dashboard';
-        // Actualizar active class en nav links del admin
-        navLinksAdmin.forEach(link => {
-            link.classList.remove('active');
-            if (link.dataset.section === sectionId.replace('-section', '')) {
-                link.classList.add('active');
-            }
-        });
-    } else if (role === 'driver') {
-        driverAppContainer.classList.remove('hidden');
-        // Actualizar el título de la cabecera del conductor
-        driverHeaderTitle.textContent = document.querySelector(`#${sectionId}`).querySelector('h2') ? document.querySelector(`#${sectionId}`).querySelector('h2').textContent : 'Mi Panel';
-        // Actualizar active class en nav links del conductor
-        navLinksDriver.forEach(link => {
-            link.classList.remove('active');
-            if (link.dataset.section === sectionId.replace('-section', '')) {
-                link.classList.add('active');
-            }
-        });
-    }
-
-    // Mostrar la sección activa
-    document.getElementById(sectionId).classList.remove('hidden');
-
-    // Rerenderizar la sección activa según el rol
-    if (role === 'admin') {
-        if (sectionId === 'dashboard-section') renderAdminDashboard();
-        if (sectionId === 'vehicles-section') renderVehicles();
-        if (sectionId === 'drivers-section') renderDrivers();
-        if (sectionId === 'accounts-section') renderAdminAccounts();
-        if (sectionId === 'alerts-section') renderAdminAlerts();
-    } else if (role === 'driver') {
-        if (sectionId === 'driver-dashboard-section') renderDriverDashboard();
-        if (sectionId === 'driver-vehicle-section') renderDriverVehicle();
-        if (sectionId === 'driver-accounts-section') renderDriverAccounts();
-        if (sectionId === 'driver-alerts-section') renderDriverAlerts();
+    if (user.role === "admin") {
+        adminMenu.classList.remove("hidden");
+        driverMenu.classList.add("hidden");
+        showSection("dashboard"); // Default admin view
+        renderAdminPanels(); // Render admin specific data
+    } else { // role is driver
+        adminMenu.classList.add("hidden");
+        driverMenu.classList.remove("hidden");
+        showSection("driver-home"); // Default driver view
+        renderDriverHome(user); // Render driver specific data
+        renderDriverAccount(user);
     }
 }
 
-// Función para actualizar el dropdown de notificaciones según el rol y usuario
-function updateNotificationDropdown() {
-    // Para Admin
-    notificationListAdmin.innerHTML = '';
-    const adminNotifications = notifications.filter(n => n.role === 'admin' || n.role === 'all');
-    if (adminNotifications.length === 0) {
-        notificationDropdownAdmin.querySelector('.no-notifications').classList.remove('hidden');
-        notificationBadgeAdmin.classList.add('hidden');
-    } else {
-        notificationDropdownAdmin.querySelector('.no-notifications').classList.add('hidden');
-        adminNotifications.forEach(notif => {
-            const li = document.createElement('li');
-            li.innerHTML = `<strong>${notif.message}</strong> <br><small>${notif.timestamp}</small>`;
-            notificationListAdmin.appendChild(li);
-        });
-        notificationBadgeAdmin.textContent = adminNotifications.length;
-        notificationBadgeAdmin.classList.remove('hidden');
-    }
+// Logout
+logoutButton.addEventListener("click", () => {
+    currentUser = null;
+    loginContainer.classList.remove("hidden");
+    loginContainer.style.display = 'flex';
 
-    // Para Conductor (solo si hay un conductor logueado)
-    if (currentRole === 'driver' && currentUser) {
-        notificationListDriver.innerHTML = '';
-        const driverNotifications = notifications.filter(n => n.role === 'all' || (n.role === 'driver' && n.userId === currentUser));
-        if (driverNotifications.length === 0) {
-            noNotificationsMessageDriver.classList.remove('hidden');
-            notificationBadgeDriver.classList.add('hidden');
-        } else {
-            noNotificationsMessageDriver.classList.add('hidden');
-            driverNotifications.forEach(notif => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${notif.message}</strong> <br><small>${notif.timestamp}</small>`;
-                notificationListDriver.appendChild(li);
-            });
-            notificationBadgeDriver.textContent = driverNotifications.length;
-            notificationBadgeDriver.classList.remove('hidden');
+    appContainer.classList.add("hidden");
+    appContainer.style.display = 'none';
+
+    document.getElementById('mobile-menu-toggle').classList.add('hidden');
+    loginForm.reset();
+    loginMsg.textContent = "";
+    sidebar.classList.add('mobile-hidden');
+    sidebar.classList.remove('mobile-visible');
+});
+
+// Navigation
+document.querySelectorAll(".nav-menu a").forEach(link => {
+    link.addEventListener("click", () => {
+        const sectionKey = link.dataset.section;
+        showSection(sectionKey);
+        if (window.innerWidth < 768) {
+            sidebar.classList.add('mobile-hidden');
+            sidebar.classList.remove('mobile-visible');
         }
-    }
-}
-
-
-// --- Admin Panel Functions ---
-function renderAdminDashboard() {
-    totalCarsEl.textContent = vehicles.length;
-    totalDriversEl.textContent = drivers.length;
-    pendingAccountsEl.textContent = accounts.filter(acc => acc.status === 'pending').length;
-
-    const upcoming = getMaintenanceAlerts().filter(alert => alert.status !== 'critical').length;
-    const critical = getMaintenanceAlerts().filter(alert => alert.status === 'critical').length;
-    upcomingServicesEl.textContent = `${upcoming} (${critical} urgentes)`;
-}
-
-function renderVehicles() {
-    vehiclesTableBody.innerHTML = '';
-    vehicles.forEach(vehicle => {
-        const driver = drivers.find(d => d.id === vehicle.driverId);
-        const serviceStatusClass = {
-            'ok': 'status-ok',
-            'warning': 'status-warning',
-            'critical': 'status-critical'
-        }[vehicle.status] || '';
-
-        const row = vehiclesTableBody.insertRow();
-        row.innerHTML = `
-            <td>${vehicle.plate}</td>
-            <td>${driver ? driver.name : 'Sin asignar'}</td>
-            <td>$${vehicle.bond.toFixed(2)}</td>
-            <td>$${vehicle.weeklyFee.toFixed(2)}</td>
-            <td><span class="status-badge ${serviceStatusClass}">${vehicle.status.toUpperCase()}</span></td>
-            <td class="table-actions">
-                <button data-id="${vehicle.id}" class="edit-vehicle-btn" title="Editar"><span class="material-icons">edit</span></button>
-                <button data-id="${vehicle.id}" class="delete-btn delete-vehicle-btn" title="Eliminar"><span class="material-icons">delete</span></button>
-            </td>
-        `;
-    });
-
-    populateDriverSelect(newDriverAssignSelect); // Actualizar select de conductores en el modal
-}
-
-function populateDriverSelect(selectElement, selectedDriverId = null) {
-    selectElement.innerHTML = '<option value="">Sin Asignar</option>';
-    drivers.forEach(driver => {
-        const option = document.createElement('option');
-        option.value = driver.id;
-        option.textContent = driver.name;
-        if (driver.id === selectedDriverId) {
-            option.selected = true;
-        }
-        selectElement.appendChild(option);
-    });
-}
-
-
-function renderDrivers() {
-    driversTableBody.innerHTML = '';
-    drivers.forEach(driver => {
-        const row = driversTableBody.insertRow();
-        row.innerHTML = `
-            <td>${driver.name}</td>
-            <td>${driver.contact}</td>
-            <td>${driver.status.toUpperCase()}</td>
-            <td class="table-actions">
-                <button data-id="${driver.id}" class="edit-driver-btn" title="Editar"><span class="material-icons">edit</span></button>
-                <button data-id="${driver.id}" class="delete-btn delete-driver-btn" title="Eliminar"><span class="material-icons">delete</span></button>
-            </td>
-        `;
-    });
-}
-
-function renderAdminAccounts() {
-    pendingAccountsList.innerHTML = '';
-    approvedAccountsTableBody.innerHTML = '';
-
-    const pending = accounts.filter(acc => acc.status === 'pending');
-    const approved = accounts.filter(acc => acc.status === 'approved');
-
-    if (pending.length === 0) {
-        pendingAccountsList.innerHTML = '<p class="no-notifications">No hay cuentas pendientes de aprobación.</p>';
-    } else {
-        pending.forEach(account => {
-            const driver = drivers.find(d => d.id === account.driverId);
-            const accountDiv = document.createElement('div');
-            accountDiv.classList.add('todo-item');
-            accountDiv.innerHTML = `
-                <div class="todo-item-info">
-                    <h4>Cuenta de ${driver ? driver.name : 'Desconocido'}</h4>
-                    <p>Período: ${account.period}</p>
-                    <p>Monto Calculado: $${account.calculatedAmount.toFixed(2)}</p>
-                </div>
-                <div class="todo-item-actions">
-                    <button class="edit-btn" data-id="${account.id}">Editar/Revisar</button>
-                    <button class="approve-btn" data-id="${account.id}">Aprobar</button>
-                </div>
-            `;
-            pendingAccountsList.appendChild(accountDiv);
-        });
-    }
-
-    approved.forEach(account => {
-        const driver = drivers.find(d => d.id === account.driverId);
-        const deductionsText = account.deductions.map(d => `${d.description} ($${d.amount.toFixed(2)})`).join(', ') || 'Ninguna';
-        const row = approvedAccountsTableBody.insertRow();
-        row.innerHTML = `
-            <td>${driver ? driver.name : 'Desconocido'}</td>
-            <td>${account.period}</td>
-            <td>$${account.finalAmount.toFixed(2)}</td>
-            <td>${deductionsText}</td>
-            <td>${account.approvalDate || 'N/A'}</td>
-        `;
-    });
-}
-
-function openReviewAccountModal(accountId) {
-    currentEditingAccount = accounts.find(acc => acc.id === accountId);
-    if (!currentEditingAccount) return;
-
-    const driver = drivers.find(d => d.id === currentEditingAccount.driverId);
-    reviewAccountDriver.textContent = driver ? driver.name : 'Desconocido';
-    reviewAccountPeriod.textContent = currentEditingAccount.period;
-    reviewAccountAmount.value = currentEditingAccount.finalAmount.toFixed(2);
-    renderDeductions(currentEditingAccount.deductions);
-
-    reviewAccountModal.classList.remove('hidden');
-}
-
-function renderDeductions(deductions) {
-    deductionsList.innerHTML = '';
-    deductions.forEach((deduction, index) => {
-        const div = document.createElement('div');
-        div.classList.add('deduction-item');
-        div.innerHTML = `
-            <span>${deduction.description}: $${deduction.amount.toFixed(2)}</span>
-            <button data-index="${index}"><span class="material-icons">close</span></button>
-        `;
-        deductionsList.appendChild(div);
-    });
-
-    // Añadir listener para eliminar deducción
-    deductionsList.querySelectorAll('.deduction-item button').forEach(button => {
-        button.onclick = (e) => {
-            const index = parseInt(e.target.closest('button').dataset.index);
-            currentEditingAccount.deductions.splice(index, 1);
-            updateAccountFinalAmount();
-            renderDeductions(currentEditingAccount.deductions);
-        };
-    });
-}
-
-function updateAccountFinalAmount() {
-    let baseAmount = parseFloat(reviewAccountAmount.value) || 0;
-    const totalDeductions = currentEditingAccount.deductions.reduce((sum, d) => sum + d.amount, 0);
-    currentEditingAccount.finalAmount = baseAmount - totalDeductions;
-}
-
-function generateSimulatedAccounts() {
-    // Generar cuentas para vehículos sin cuenta reciente para la semana actual
-    const today = new Date();
-    const currentWeekNumber = Math.ceil((((today - new Date(today.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
-    const currentYear = today.getFullYear();
-    const currentPeriod = `Semana ${currentWeekNumber} - ${currentYear}`;
-
-    vehicles.forEach(vehicle => {
-        const hasRecentAccount = accounts.some(acc =>
-            acc.vehicleId === vehicle.id && acc.period === currentPeriod
-        );
-
-        if (!hasRecentAccount && vehicle.driverId) { // Solo si tiene conductor asignado
-            accounts.push({
-                id: generateUniqueId('acc'),
-                driverId: vehicle.driverId,
-                vehicleId: vehicle.id,
-                period: currentPeriod,
-                calculatedAmount: vehicle.weeklyFee,
-                finalAmount: vehicle.weeklyFee,
-                deductions: [],
-                status: 'pending'
-            });
-            addNotification(`Nueva cuenta generada para ${vehicle.plate} (${currentPeriod})`, 'admin');
-            addNotification(`Tienes una nueva cuenta semanal pendiente de revisión para el período ${currentPeriod}.`, 'driver', vehicle.driverId);
-        }
-    });
-    saveData();
-    renderAdminAccounts();
-    renderAdminDashboard();
-    if (currentRole === 'driver') renderDriverDashboard(); // Para actualizar el panel del conductor si está logueado
-}
-
-
-function getMaintenanceAlerts() {
-    const alerts = [];
-    const today = new Date();
-
-    vehicles.forEach(vehicle => {
-        const lastService = new Date(vehicle.lastServiceDate);
-        const daysSinceLastService = (today - lastService) / (1000 * 60 * 60 * 24);
-        const monthsSinceLastService = daysSinceLastService / 30.44; // Promedio de días por mes
-
-        // Simulación de kilometraje (asumir un incremento constante para el prototipo)
-        const kmDrivenSinceService = (daysSinceLastService * 100); // 100 km por día
-        const currentMileage = vehicle.lastServiceMileage + kmDrivenSinceService;
-
-        let alertStatus = 'ok';
-        let alertMessage = '';
-
-        // Alerta por kilometraje
-        if (currentMileage >= (vehicle.lastServiceMileage + vehicle.serviceIntervalKm)) {
-            alertStatus = 'critical';
-            alertMessage += `Superado por ${(currentMileage - (vehicle.lastServiceMileage + vehicle.serviceIntervalKm)).toFixed(0)} km. `;
-        } else if (currentMileage >= (vehicle.lastServiceMileage + vehicle.serviceIntervalKm * 0.9)) {
-            if (alertStatus === 'ok') alertStatus = 'warning'; // No degradar de critical a warning
-            alertMessage += `Próximo a mantenimiento por km (${((vehicle.lastServiceMileage + vehicle.serviceIntervalKm) - currentMileage).toFixed(0)} km restantes). `;
-        }
-
-        // Alerta por tiempo
-        if (monthsSinceLastService >= vehicle.serviceIntervalMonths) {
-            alertStatus = 'critical';
-            alertMessage += `Superado por ${(monthsSinceLastService - vehicle.serviceIntervalMonths).toFixed(1)} meses.`;
-        } else if (monthsSinceLastService >= vehicle.serviceIntervalMonths * 0.8) {
-            if (alertStatus === 'ok') alertStatus = 'warning'; // No degradar de critical a warning
-            alertMessage += `Próximo a mantenimiento por tiempo (${(vehicle.serviceIntervalMonths - monthsSinceLastService).toFixed(1)} meses restantes).`;
-        }
-
-        if (alertStatus !== 'ok') {
-            alerts.push({
-                id: vehicle.id,
-                plate: vehicle.plate,
-                message: alertMessage || 'Requiere revisión.',
-                status: alertStatus,
-                currentMileage: currentMileage.toFixed(0),
-                driverId: vehicle.driverId // Para filtrar por conductor
-            });
-        }
-    });
-    return alerts;
-}
-
-function renderAdminAlerts() {
-    const alerts = getMaintenanceAlerts();
-    maintenanceAlertsList.innerHTML = '';
-
-    if (alerts.length === 0) {
-        noAlertsMessageAdmin.classList.remove('hidden');
-    } else {
-        noAlertsMessageAdmin.classList.add('hidden');
-        alerts.forEach(alert => {
-            const alertDiv = document.createElement('div');
-            alertDiv.classList.add('maintenance-alert-item', alert.status);
-            alertDiv.innerHTML = `
-                <div>
-                    <h4>Vehículo: ${alert.plate}</h4>
-                    <p>${alert.message}</p>
-                    <p>Kilometraje actual (simulado): ${alert.currentMileage} km</p>
-                </div>
-                <span class="alert-status">${alert.status.toUpperCase()}</span>
-            `;
-            maintenanceAlertsList.appendChild(alertDiv);
-        });
-    }
-}
-
-// --- Driver Panel Functions (NUEVAS) ---
-function renderDriverDashboard() {
-    const driver = drivers.find(d => d.id === currentUser);
-    if (!driver) return; // No debería pasar si el login fue exitoso
-
-    driverDashboardNameEl.textContent = driver.name;
-    currentDriverNameEl.textContent = driver.name;
-
-    const driverPendingAccounts = accounts.filter(acc => acc.driverId === currentUser && acc.status === 'pending').length;
-    driverPendingAccountsEl.textContent = driverPendingAccounts;
-
-    const assignedVehicle = vehicles.find(v => v.driverId === currentUser);
-    if (assignedVehicle) {
-        const vehicleAlerts = getMaintenanceAlerts().filter(alert => alert.id === assignedVehicle.id);
-        if (vehicleAlerts.length > 0) {
-            const criticalAlert = vehicleAlerts.find(a => a.status === 'critical');
-            if (criticalAlert) {
-                driverUpcomingServiceEl.textContent = `¡URGENTE! (${criticalAlert.message.split('.')[0]})`;
-                driverUpcomingServiceEl.style.color = 'var(--accent-red)';
-            } else {
-                driverUpcomingServiceEl.textContent = `Próximo (${vehicleAlerts[0].message.split('.')[0]})`;
-                driverUpcomingServiceEl.style.color = 'var(--accent-yellow)';
-            }
-        } else {
-            driverUpcomingServiceEl.textContent = 'Servicio al día';
-            driverUpcomingServiceEl.style.color = 'var(--accent-green)';
-        }
-    } else {
-        driverUpcomingServiceEl.textContent = 'Sin vehículo asignado';
-        driverUpcomingServiceEl.style.color = 'var(--text-secondary)';
-    }
-}
-
-function renderDriverVehicle() {
-    const assignedVehicle = vehicles.find(v => v.driverId === currentUser);
-    if (assignedVehicle) {
-        driverVehicleDetails.classList.remove('hidden');
-        noVehicleAssignedMessage.classList.add('hidden');
-
-        driverVehiclePlate.textContent = assignedVehicle.plate;
-        driverVehicleBond.textContent = `$${assignedVehicle.bond.toFixed(2)}`;
-        driverVehicleFee.textContent = `$${assignedVehicle.weeklyFee.toFixed(2)}`;
-        driverVehicleLastService.textContent = assignedVehicle.lastServiceDate;
-        driverVehicleLastMileage.textContent = assignedVehicle.lastServiceMileage;
-
-        const serviceStatusClass = {
-            'ok': 'status-ok',
-            'warning': 'status-warning',
-            'critical': 'status-critical'
-        }[assignedVehicle.status] || '';
-        driverVehicleStatus.textContent = assignedVehicle.status.toUpperCase();
-        driverVehicleStatus.className = `status-badge ${serviceStatusClass}`;
-
-    } else {
-        driverVehicleDetails.classList.add('hidden');
-        noVehicleAssignedMessage.classList.remove('hidden');
-    }
-}
-
-function renderDriverAccounts() {
-    driverPendingAccountsList.innerHTML = '';
-    driverApprovedAccountsTableBody.innerHTML = '';
-
-    const driverPending = accounts.filter(acc => acc.driverId === currentUser && acc.status === 'pending');
-    const driverApproved = accounts.filter(acc => acc.driverId === currentUser && acc.status === 'approved');
-
-    if (driverPending.length === 0) {
-        driverPendingAccountsList.innerHTML = '<p class="no-notifications">No tienes cuentas pendientes de aprobación.</p>';
-    } else {
-        driverPending.forEach(account => {
-            const accountDiv = document.createElement('div');
-            accountDiv.classList.add('todo-item');
-            accountDiv.innerHTML = `
-                <div class="todo-item-info">
-                    <h4>Cuenta Semanal</h4>
-                    <p>Período: ${account.period}</p>
-                    <p>Monto Calculado: $${account.calculatedAmount.toFixed(2)}</p>
-                    <p>Deducciones: ${account.deductions.map(d => `${d.description} ($${d.amount.toFixed(2)})`).join(', ') || 'Ninguna'}</p>
-                </div>
-                <div class="todo-item-actions">
-                    <button class="view-account-btn" data-id="${account.id}">Ver Detalle</button>
-                </div>
-            `;
-            driverPendingAccountsList.appendChild(accountDiv);
-        });
-    }
-
-    driverApproved.forEach(account => {
-        const deductionsText = account.deductions.map(d => `${d.description} ($${d.amount.toFixed(2)})`).join(', ') || 'Ninguna';
-        const row = driverApprovedAccountsTableBody.insertRow();
-        row.innerHTML = `
-            <td>${account.period}</td>
-            <td>$${account.finalAmount.toFixed(2)}</td>
-            <td>${deductionsText}</td>
-            <td>${account.approvalDate || 'N/A'}</td>
-        `;
-    });
-}
-
-function renderDriverAlerts() {
-    const alerts = getMaintenanceAlerts().filter(alert => alert.driverId === currentUser);
-    driverMaintenanceAlertsList.innerHTML = '';
-
-    if (alerts.length === 0) {
-        noAlertsMessageDriver.classList.remove('hidden');
-    } else {
-        noAlertsMessageDriver.classList.add('hidden');
-        alerts.forEach(alert => {
-            const alertDiv = document.createElement('div');
-            alertDiv.classList.add('maintenance-alert-item', alert.status);
-            alertDiv.innerHTML = `
-                <div>
-                    <h4>Vehículo: ${alert.plate}</h4>
-                    <p>${alert.message}</p>
-                    <p>Kilometraje actual (simulado): ${alert.currentMileage} km</p>
-                </div>
-                <span class="alert-status">${alert.status.toUpperCase()}</span>
-            `;
-            driverMaintenanceAlertsList.appendChild(alertDiv);
-        });
-    }
-}
-
-
-// --- 4. Inicialización y Event Listeners ---
-document.addEventListener('DOMContentLoaded', () => {
-    loadData();
-    updateNotificationDropdown(); // Inicializar dropdowns de notificaciones
-
-    // --- Login Form Submission ---
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-
-        // Intentar login como ADMIN
-        if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-            currentUser = 'admin';
-            currentRole = 'admin';
-            loginContainer.classList.add('hidden');
-            adminAppContainer.classList.remove('hidden');
-            addNotification('Sesión iniciada como Administrador.', 'admin');
-            showSection('dashboard-section', 'admin'); // Muestra el dashboard del admin
-            return; // Salir de la función
-        }
-
-        // Intentar login como CONDUCTOR
-        const driverLogin = DRIVER_CREDENTIALS.find(d => d.username === username && d.password === password);
-        if (driverLogin) {
-            currentUser = driverLogin.id;
-            currentRole = 'driver';
-            loginContainer.classList.add('hidden');
-            driverAppContainer.classList.remove('hidden');
-            addNotification(`Sesión iniciada como Conductor (${drivers.find(d => d.id === currentUser).name}).`, 'driver', currentUser);
-            showSection('driver-dashboard-section', 'driver'); // Muestra el dashboard del conductor
-            return; // Salir de la función
-        }
-
-        // Si no coincide con ningún rol
-        loginMessage.textContent = 'Usuario o contraseña incorrectos.';
-    });
-
-    // --- Logout Buttons ---
-    logoutButtonAdmin.addEventListener('click', () => {
-        adminAppContainer.classList.add('hidden');
-        loginContainer.classList.remove('hidden');
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-        loginMessage.textContent = '';
-        addNotification('Sesión de administrador cerrada.', 'admin');
-        currentUser = null;
-        currentRole = null;
-    });
-
-    logoutButtonDriver.addEventListener('click', () => {
-        driverAppContainer.classList.add('hidden');
-        loginContainer.classList.remove('hidden');
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-        loginMessage.textContent = '';
-        addNotification('Sesión de conductor cerrada.', 'driver', currentUser);
-        currentUser = null;
-        currentRole = null;
-    });
-
-    // --- Navigation Links (Admin) ---
-    navLinksAdmin.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sectionId = link.dataset.section + '-section';
-            showSection(sectionId, 'admin');
-        });
-    });
-
-    // --- Navigation Links (Driver) ---
-    navLinksDriver.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const sectionId = link.dataset.section + '-section';
-            showSection(sectionId, 'driver');
-        });
-    });
-
-
-    // --- Notifications Dropdown Toggle (Admin) ---
-    notificationIconAdmin.addEventListener('click', (e) => {
-        e.stopPropagation(); // Evita que el clic se propague y cierre inmediatamente
-        notificationDropdownAdmin.classList.toggle('hidden');
-    });
-
-    // --- Notifications Dropdown Toggle (Driver) ---
-    notificationIconDriver.addEventListener('click', (e) => {
-        e.stopPropagation(); // Evita que el clic se propague y cierre inmediatamente
-        notificationDropdownDriver.classList.toggle('hidden');
-    });
-
-    // Cerrar dropdown si se hace clic fuera (para ambos)
-    document.addEventListener('click', (e) => {
-        if (!notificationIconAdmin.contains(e.target) && !notificationDropdownAdmin.contains(e.target)) {
-            notificationDropdownAdmin.classList.add('hidden');
-        }
-        if (currentRole === 'driver' && !notificationIconDriver.contains(e.target) && !notificationDropdownDriver.contains(e.target)) {
-            notificationDropdownDriver.classList.add('hidden');
-        }
-    });
-
-
-    // --- Vehicles Section Listeners (Admin) ---
-    addVehicleBtn.addEventListener('click', () => {
-        addVehicleModal.classList.remove('hidden');
-        // Resetear formulario
-        addVehicleForm.reset();
-        populateDriverSelect(newDriverAssignSelect); // Asegurarse de que el select de conductores esté actualizado
-    });
-
-    closeVehicleModalBtn.addEventListener('click', () => {
-        addVehicleModal.classList.add('hidden');
-    });
-
-    addVehicleForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newVehicle = {
-            id: generateUniqueId('v'),
-            plate: document.getElementById('new-plate').value.toUpperCase(),
-            driverId: document.getElementById('new-driver-assign').value || null,
-            bond: parseFloat(document.getElementById('new-bond').value),
-            weeklyFee: parseFloat(document.getElementById('new-fee').value),
-            lastServiceDate: document.getElementById('new-service-date').value,
-            lastServiceMileage: parseInt(document.getElementById('new-service-mileage').value),
-            serviceIntervalKm: 10000, // Valor por defecto
-            serviceIntervalMonths: 6, // Valor por defecto
-            status: 'ok' // Nuevo vehículo empieza con servicio OK
-        };
-        vehicles.push(newVehicle);
-        if (newVehicle.driverId) {
-            // Actualizar el estado del conductor a 'active' si no lo estaba
-            const driver = drivers.find(d => d.id === newVehicle.driverId);
-            if (driver) driver.status = 'active';
-            addNotification(`Vehículo ${newVehicle.plate} asignado a ${driver.name}.`, 'admin');
-            addNotification(`Se te ha asignado el vehículo ${newVehicle.plate}.`, 'driver', newVehicle.driverId);
-        } else {
-            addNotification(`Vehículo ${newVehicle.plate} añadido (sin asignar).`, 'admin');
-        }
-        saveData();
-        renderVehicles();
-        renderAdminDashboard(); // Actualizar el dashboard
-        if (currentRole === 'driver') renderDriverDashboard(); // Actualizar panel conductor si está logueado
-        addVehicleModal.classList.add('hidden');
-    });
-
-    // Delegación de eventos para botones de tabla de vehículos (editar/eliminar)
-    vehiclesTableBody.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-vehicle-btn')) {
-            const vehicleIdToDelete = e.target.closest('button').dataset.id;
-            if (confirm('¿Estás seguro de que quieres eliminar este vehículo?')) {
-                const vehicle = vehicles.find(v => v.id === vehicleIdToDelete);
-                if (vehicle && vehicle.driverId) {
-                    // Si el vehículo tiene conductor asignado, desasignar al conductor
-                    const driver = drivers.find(d => d.id === vehicle.driverId);
-                    if (driver) driver.status = 'no-vehicle'; // O ajustar según tu lógica
-                    addNotification(`Vehículo ${vehicle.plate} desasignado de ${driver.name}.`, 'admin');
-                    addNotification(`El vehículo ${vehicle.plate} ha sido desasignado.`, 'driver', vehicle.driverId);
-                }
-                vehicles = vehicles.filter(v => v.id !== vehicleIdToDelete);
-                addNotification(`Vehículo ${vehicle.plate} eliminado.`, 'admin');
-                saveData();
-                renderVehicles();
-                renderAdminDashboard();
-                if (currentRole === 'driver') renderDriverDashboard(); // Actualizar panel conductor si está logueado
-            }
-        }
-        // TODO: Implementar edición de vehículo si se necesita en el prototipo
-    });
-
-
-    // --- Drivers Section Listeners (Admin) ---
-    addDriverBtn.addEventListener('click', () => {
-        addDriverModal.classList.remove('hidden');
-        addDriverForm.reset();
-    });
-
-    closeDriverModalBtn.addEventListener('click', () => {
-        addDriverModal.classList.add('hidden');
-    });
-
-    addDriverForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newDriver = {
-            id: generateUniqueId('d'),
-            name: document.getElementById('new-driver-name').value,
-            contact: document.getElementById('new-driver-contact').value,
-            status: 'no-vehicle' // Nuevo conductor inicialmente sin vehículo
-        };
-        drivers.push(newDriver);
-        // También añadir credenciales simuladas para este nuevo conductor
-        DRIVER_CREDENTIALS.push({
-            username: newDriver.name.toLowerCase().replace(/\s/g, ''), // Ej. juanperez
-            password: 'password', // Contraseña por defecto
-            id: newDriver.id
-        });
-        addNotification(`Conductor ${newDriver.name} añadido.`, 'admin');
-        saveData();
-        renderDrivers();
-        renderAdminDashboard(); // Actualizar el dashboard
-        addDriverModal.classList.add('hidden');
-    });
-
-    // Delegación de eventos para botones de tabla de conductores (eliminar)
-    driversTableBody.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-driver-btn')) {
-            const driverIdToDelete = e.target.closest('button').dataset.id;
-            if (confirm('¿Estás seguro de que quieres eliminar este conductor?')) {
-                // Verificar si el conductor tiene vehículos asignados antes de eliminar
-                const hasVehicles = vehicles.some(v => v.driverId === driverIdToDelete);
-                if (hasVehicles) {
-                    alert('No se puede eliminar un conductor que tiene vehículos asignados. Desasigna los vehículos primero.');
-                    return;
-                }
-                const driverToDelete = drivers.find(d => d.id === driverIdToDelete);
-                drivers = drivers.filter(d => d.id !== driverIdToDelete);
-                // Eliminar también las credenciales simuladas
-                const index = DRIVER_CREDENTIALS.findIndex(d => d.id === driverIdToDelete);
-                if (index > -1) {
-                    DRIVER_CREDENTIALS.splice(index, 1);
-                }
-                addNotification(`Conductor ${driverToDelete ? driverToDelete.name : 'Desconocido'} eliminado.`, 'admin');
-                saveData();
-                renderDrivers();
-                renderAdminDashboard();
-            }
-        }
-        // TODO: Implementar edición de conductor
-    });
-
-
-    // --- Accounts Section Listeners (Admin) ---
-    // Delegación de eventos para botones de la lista de cuentas
-    pendingAccountsList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('edit-btn')) {
-            const accountId = e.target.dataset.id;
-            openReviewAccountModal(accountId);
-        } else if (e.target.classList.contains('approve-btn')) {
-            const accountId = e.target.dataset.id;
-            const accountToApprove = accounts.find(acc => acc.id === accountId);
-            if (accountToApprove) {
-                const driver = drivers.find(d=>d.id === accountToApprove.driverId);
-                if (confirm(`¿Estás seguro de aprobar la cuenta para ${driver ? driver.name : 'Desconocido'}?`)) {
-                    accountToApprove.status = 'approved';
-                    accountToApprove.approvalDate = new Date().toLocaleDateString();
-                    addNotification(`Cuenta para ${driver ? driver.name : 'Desconocido'} aprobada.`, 'admin');
-                    addNotification(`Tu cuenta semanal del período ${accountToApprove.period} ha sido aprobada.`, 'driver', accountToApprove.driverId);
-                    saveData();
-                    renderAdminAccounts();
-                    renderAdminDashboard();
-                    if (currentRole === 'driver') renderDriverDashboard(); // Para actualizar el panel del conductor si está logueado
-                }
-            }
-        }
-    });
-
-    closeReviewAccountModalBtn.addEventListener('click', () => {
-        reviewAccountModal.classList.add('hidden');
-        currentEditingAccount = null;
-    });
-
-    // Actualizar monto final al cambiar el monto calculado
-    reviewAccountAmount.addEventListener('input', () => {
-        if (currentEditingAccount) {
-            updateAccountFinalAmount();
-        }
-    });
-
-    // Añadir deducción
-    addDeductionBtn.addEventListener('click', () => {
-        const desc = newDeductionDesc.value.trim();
-        const amount = parseFloat(newDeductionAmount.value);
-
-        if (desc && !isNaN(amount) && amount > 0) {
-            currentEditingAccount.deductions.push({ description: desc, amount: amount });
-            updateAccountFinalAmount();
-            renderDeductions(currentEditingAccount.deductions);
-            newDeductionDesc.value = '';
-            newDeductionAmount.value = '';
-        } else {
-            alert('Por favor, ingrese una descripción y un monto válido para la deducción.');
-        }
-    });
-
-    // Botón Aprobar dentro del modal de revisión
-    approveAccountBtn.addEventListener('click', () => {
-        if (currentEditingAccount) {
-            currentEditingAccount.status = 'approved';
-            currentEditingAccount.approvalDate = new Date().toLocaleDateString();
-            const driver = drivers.find(d=>d.id === currentEditingAccount.driverId);
-            addNotification(`Cuenta para ${driver ? driver.name : 'Desconocido'} (revisada) aprobada.`, 'admin');
-            addNotification(`Tu cuenta semanal del período ${currentEditingAccount.period} ha sido aprobada con deducciones.`, 'driver', currentEditingAccount.driverId);
-            saveData();
-            renderAdminAccounts();
-            renderAdminDashboard();
-            if (currentRole === 'driver') renderDriverDashboard(); // Para actualizar el panel del conductor si está logueado
-            reviewAccountModal.classList.add('hidden');
-            currentEditingAccount = null;
-        }
-    });
-
-    // Botón para generar cuentas simuladas (útil para la demo)
-    generateNewAccountsBtn.addEventListener('click', () => {
-        generateSimulatedAccounts();
     });
 });
 
-// Al final de script.js, o dentro de DOMContentLoaded
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('ServiceWorker registrado con éxito:', registration.scope);
-            })
-            .catch(error => {
-                console.error('Fallo el registro del ServiceWorker:', error);
-            });
-    });
+function showSection(sectionKey) {
+    document.querySelectorAll(".app-section").forEach(sec => sec.classList.add("hidden"));
+    const targetSection = document.getElementById(sectionKey + "-section");
+    if (targetSection) {
+        targetSection.classList.remove("hidden");
+    }
+
+    // Re-render specific panels when their section is shown
+    if (sectionKey === "vehicles") {
+        renderAdminPanels();
+    } else if (sectionKey === "drivers") {
+        renderAdminPanels();
+    } else if (sectionKey === "accounts") {
+        renderAdminPanels();
+    } else if (sectionKey === "driver-home" && currentUser) {
+        renderDriverHome(currentUser);
+    } else if (sectionKey === "driver-account" && currentUser) {
+        renderDriverAccount(currentUser);
+    }
 }
+
+// Admin Panel Rendering and Actions
+function renderAdminPanels() {
+    // Render Vehicles
+    vehiclesList.innerHTML = vehicles.map(v => {
+        const driverName = drivers.find(d => d.id === v.driverId)?.name || 'N/A';
+        return `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${v.plate}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${driverName}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">$${v.bond}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">$${v.fee}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${v.lastService}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 ml-2" onclick="editVehicle('${v.id}')">Editar</button>
+                    <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 ml-2" onclick="deleteVehicle('${v.id}')">Eliminar</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Render Drivers
+    driversList.innerHTML = drivers.map(d => {
+        // Exclude admin user from driver list
+        if (d.role === 'admin') return '';
+
+        const assignedVehicle = vehicles.find(v => v.driverId === d.id)?.plate || 'Ninguno';
+        return `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${d.name}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${d.username}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${assignedVehicle}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${d.status}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 ml-2" onclick="editDriver('${d.id}')">Editar</button>
+                    <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200 ml-2" onclick="deleteDriver('${d.id}')">Eliminar</button>
+                    <select onchange="assignVehicleToDriver('${d.id}', this.value)" class="ml-2 p-1 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                        <option value="">Asignar Vehículo</option>
+                        ${vehicles.filter(v => !v.driverId || v.driverId === d.id).map(v => `<option value="${v.id}" ${v.driverId === d.id ? 'selected' : ''}>${v.plate}</option>`).join('')}
+                    </select>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Render Accounts
+    accountsList.innerHTML = accounts.map(a => {
+        const driverName = drivers.find(d => d.id === a.driverId)?.name || 'Desconocido';
+        const deductionsSummary = a.deductions.map(d => `${d.description} ($${d.amount} - ${d.status})`).join(', ') || 'Ninguna';
+        const totalDeductions = a.deductions.reduce((sum, d) => sum + d.amount, 0);
+        const finalAmount = a.amount - totalDeductions;
+
+        return `
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${driverName}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${a.period}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">$${a.amount}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">${deductionsSummary}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${a.status === 'approved' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'}">
+                        ${a.status}
+                    </span>
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap text-right text-sm font-medium">
+                    ${a.status !== 'approved' ? `<button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-200 ml-2" onclick="approveAccount('${a.id}')">Aprobar</button>` : ''}
+                    ${a.deductions.some(d => d.status === 'pending') ? `<button class="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-200 ml-2" onclick="reviewDeductions('${a.id}')">Revisar Deducciones</button>` : ''}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Admin Actions (Mock functions as no backend)
+function editVehicle(vehicleId) {
+    const vehicle = vehicles.find(v => v.id === vehicleId);
+    if (vehicle) {
+        const newPlate = prompt(`Editar placas para ${vehicle.plate}:`, vehicle.plate);
+        if (newPlate !== null) {
+            vehicle.plate = newPlate;
+            showMessageModal(`Vehículo ${vehicle.id} actualizado.`);
+            renderAdminPanels();
+        }
+    }
+}
+
+function deleteVehicle(vehicleId) {
+    if (confirm("¿Estás seguro de que quieres eliminar este vehículo?")) {
+        vehicles = vehicles.filter(v => v.id !== vehicleId);
+        showMessageModal(`Vehículo ${vehicleId} eliminado.`);
+        renderAdminPanels();
+    }
+}
+
+addVehicleBtn.addEventListener('click', () => {
+    const plate = addVehiclePlate.value;
+    const bond = parseFloat(addVehicleBond.value);
+    const fee = parseFloat(addVehicleFee.value);
+
+    if (!plate || isNaN(bond) || isNaN(fee) || bond < 0 || fee < 0) {
+        showMessageModal("Por favor, ingresa datos válidos para el vehículo.");
+        return;
+    }
+    const newVehicle = {
+        id: 'v' + (vehicles.length + 1), // Simple ID generation
+        plate: plate,
+        driverId: null,
+        bond: bond,
+        fee: fee,
+        lastService: new Date().toISOString().slice(0, 10),
+        status: "disponible"
+    };
+    vehicles.push(newVehicle);
+    showMessageModal(`Vehículo ${plate} añadido.`);
+    renderAdminPanels();
+    addVehiclePlate.value = '';
+    addVehicleBond.value = '';
+    addVehicleFee.value = '';
+});
+
+function editDriver(driverId) {
+    const driver = drivers.find(d => d.id === driverId);
+    if (driver) {
+        const newName = prompt(`Editar nombre para ${driver.name}:`, driver.name);
+        if (newName !== null) {
+            driver.name = newName;
+            showMessageModal(`Conductor ${driver.id} actualizado.`);
+            renderAdminPanels();
+        }
+    }
+}
+
+function deleteDriver(driverId) {
+    if (confirm("¿Estás seguro de que quieres eliminar este conductor?")) {
+        drivers = drivers.filter(d => d.id !== driverId);
+        // Also unassign vehicle if any
+        const vehicle = vehicles.find(v => v.driverId === driverId);
+        if (vehicle) vehicle.driverId = null;
+        showMessageModal(`Conductor ${driverId} eliminado.`);
+        renderAdminPanels();
+    }
+}
+
+addDriverBtn.addEventListener('click', () => {
+    const name = addDriverName.value;
+    const username = addDriverUsername.value;
+    const password = addDriverPassword.value;
+
+    if (!name || !username || !password) {
+        showMessageModal("Por favor, completa todos los campos para el conductor.");
+        return;
+    }
+    const newDriver = {
+        id: 'u' + (USERS.length + 1), // Simple ID generation
+        name: name,
+        username: username,
+        password: password, // In a real app, hash this!
+        role: "driver",
+        contact: "", // Add contact field if needed
+        status: "activo"
+    };
+    drivers.push(newDriver);
+    USERS.push({ id: newDriver.id, username: newDriver.username, password: newDriver.password, role: newDriver.role });
+    showMessageModal(`Conductor ${name} añadido.`);
+    renderAdminPanels();
+    addDriverName.value = '';
+    addDriverUsername.value = '';
+    addDriverPassword.value = '';
+});
+
+function assignVehicleToDriver(driverId, vehicleId) {
+    // Unassign vehicle from any other driver first
+    vehicles.forEach(v => {
+        if (v.driverId === driverId) {
+            v.driverId = null;
+        }
+    });
+
+    const selectedVehicle = vehicles.find(v => v.id === vehicleId);
+    if (selectedVehicle) {
+        selectedVehicle.driverId = driverId;
+        showMessageModal(`Vehículo ${selectedVehicle.plate} asignado.`);
+    } else {
+        // If vehicleId is empty, it means "unassign"
+        showMessageModal(`Vehículo desasignado del conductor.`);
+    }
+    renderAdminPanels();
+}
+
+function approveAccount(accountId) {
+    const account = accounts.find(a => a.id === accountId);
+    if (account) {
+        account.status = 'approved';
+        showMessageModal('Cuenta aprobada con éxito.');
+        renderAdminPanels(); // Re-render accounts list
+    }
+}
+
+function reviewDeductions(accountId) {
+    const account = accounts.find(a => a.id === accountId);
+    if (!account || !account.deductions || account.deductions.length === 0) {
+        showMessageModal("No hay deducciones para revisar en esta cuenta.");
+        return;
+    }
+
+    let deductionListHtml = account.deductions.map((d, index) => `
+        <div class="flex justify-between items-center p-2 border-b last:border-b-0 dark:border-gray-600">
+            <span>${d.description} - $${d.amount} (${d.status})</span>
+            ${d.status === 'pending' ? `
+                <div>
+                    <button class="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200 mr-2" onclick="approveDeduction('${accountId}', ${index})">Aprobar</button>
+                    <button class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200" onclick="rejectDeduction('${accountId}', ${index})">Rechazar</button>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+
+    showMessageModal(`
+        <h3 class="font-bold text-xl mb-4">Revisar Deducciones para ${account.period}</h3>
+        ${deductionListHtml || '<p>No hay deducciones.</p>'}
+    `);
+    // Override the default modal close button behavior for this specific modal instance if needed,
+    // or ensure the buttons inside this modal also call hideMessageModal.
+}
+
+function approveDeduction(accountId, deductionIndex) {
+    const account = accounts.find(a => a.id === accountId);
+    if (account && account.deductions[deductionIndex]) {
+        account.deductions[deductionIndex].status = 'approved';
+        showMessageModal('Deducción aprobada.');
+        renderAdminPanels();
+        hideMessageModal(); // Close the modal after action
+    }
+}
+
+function rejectDeduction(accountId, deductionIndex) {
+    const account = accounts.find(a => a.id === accountId);
+    if (account && account.deductions[deductionIndex]) {
+        account.deductions[deductionIndex].status = 'rejected';
+        showMessageModal('Deducción rechazada.');
+        renderAdminPanels();
+        hideMessageModal(); // Close the modal after action
+    }
+}
+
+
+// Render Driver Panels
+function renderDriverHome(user) {
+    const myCar = vehicles.find(v => v.driverId === user.id);
+    if (myCar) {
+        driverCarInfo.innerHTML = `
+            <p><strong>Placas:</strong> <span class="text-blue-600 dark:text-blue-400">${myCar.plate}</span></p>
+            <p><strong>Fianza:</strong> <span class="text-green-600 dark:text-green-400">$${myCar.bond}</span></p>
+            <p><strong>Cuota Semanal:</strong> <span class="text-green-600 dark:text-green-400">$${myCar.fee}</span></p>
+            <p><strong>Último Servicio:</strong> ${myCar.lastService}</p>
+            <p class="mt-2 text-sm ${myCar.status === 'activo' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'}">Estado: ${myCar.status === 'activo' ? 'Vehículo asignado y listo.' : 'Requiere atención.'}</p>
+        `;
+    } else {
+        driverCarInfo.innerHTML = `<p class="text-yellow-600 dark:text-yellow-400">No tienes vehículo asignado actualmente.</p>`;
+    }
+}
+
+function renderDriverAccount(user) {
+    const driverAccounts = accounts.filter(a => a.driverId === user.id);
+    const pendingAccount = driverAccounts.find(a => a.status === "pending");
+
+    if (pendingAccount) {
+        const totalApprovedDeductions = pendingAccount.deductions.filter(d => d.status === "approved").reduce((s, d) => s + d.amount, 0);
+        const totalPendingDeductions = pendingAccount.deductions.filter(d => d.status === "pending").reduce((s, d) => s + d.amount, 0);
+        
+        driverAccInfo.innerHTML = `
+            <p><strong>Período Actual:</strong> <span class="text-blue-600 dark:text-blue-400">${pendingAccount.period}</span></p>
+            <p><strong>Monto Base:</strong> <span class="text-green-600 dark:text-green-400">$${pendingAccount.amount}</span></p>
+            <p><strong>Deducciones Aprobadas:</strong> <span class="text-red-600 dark:text-red-400">$${totalApprovedDeductions}</span></p>
+            <p><strong>Deducciones Pendientes:</strong> <span class="text-yellow-600 dark:text-yellow-400">$${totalPendingDeductions}</span></p>
+            <p class="font-bold text-lg mt-2">Monto Pendiente: <span class="text-purple-600 dark:text-purple-400">$${pendingAccount.amount - totalApprovedDeductions}</span></p>
+        `;
+        renderDriverDeductions(pendingAccount.deductions);
+    } else {
+        driverAccInfo.innerHTML = `<p class="text-gray-600 dark:text-gray-300">No hay cuenta pendiente para el período actual.</p>`;
+        driverDeductList.innerHTML = `<p class="text-gray-600 dark:text-gray-300">No hay deducciones registradas para la cuenta actual.</p>`;
+    }
+
+    // Display all historical accounts
+    const historicalAccounts = driverAccounts.filter(a => a.status === "approved");
+    const historicalAccountsContainer = document.getElementById('driver-historical-accounts');
+    if (historicalAccountsContainer) {
+        if (historicalAccounts.length > 0) {
+            let historyHtml = '<h4 class="font-semibold text-lg mt-6 mb-2">Historial de Cuentas Aprobadas</h4><ul class="space-y-2">';
+            historicalAccounts.forEach(acc => {
+                const totalDeds = acc.deductions.reduce((s, d) => s + d.amount, 0);
+                historyHtml += `
+                    <li class="bg-gray-50 p-3 rounded-md shadow-sm dark:bg-gray-700 dark:text-gray-200">
+                        <p><strong>Período:</strong> ${acc.period}</p>
+                        <p><strong>Monto Final:</strong> $${acc.amount - totalDeds}</p>
+                        <p><strong>Deducciones:</strong> ${acc.deductions.map(d => `${d.description} ($${d.amount})`).join(', ') || 'Ninguna'}</p>
+                    </li>
+                `;
+            });
+            historyHtml += '</ul>';
+            historicalAccountsContainer.innerHTML = historyHtml;
+        } else {
+            historicalAccountsContainer.innerHTML = `<p class="text-gray-600 dark:text-gray-300">No hay historial de cuentas aprobadas.</p>`;
+        }
+    }
+}
+
+function renderDriverDeductions(deds) {
+    if (deds.length > 0) {
+        driverDeductList.innerHTML = `
+            <h4 class="font-semibold text-lg mb-2">Deducciones Solicitadas</h4>
+            <ul class="space-y-2">
+                ${deds.map(d => `
+                    <li class="bg-gray-50 p-3 rounded-md shadow-sm dark:bg-gray-700 dark:text-gray-200">
+                        ${d.description} - <span class="font-semibold">$${d.amount}</span> (<span class="${d.status === 'approved' ? 'text-green-600 dark:text-green-400' : d.status === 'pending' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}">${d.status === 'pending' ? 'Pendiente' : d.status === 'approved' ? 'Aprobada' : 'Rechazada'}</span>)
+                    </li>
+                `).join("")}
+            </ul>
+        `;
+    } else {
+        driverDeductList.innerHTML = `<p class="text-gray-600 dark:text-gray-300">No hay deducciones solicitadas para esta cuenta.</p>`;
+    }
+}
+
+// Send Deduction (simulated)
+sendDeductionBtn.addEventListener("click", () => {
+    const desc = document.getElementById("deduct-desc").value;
+    const amt = parseFloat(document.getElementById("deduct-amount").value);
+
+    if (!desc || isNaN(amt) || amt <= 0) {
+        showMessageModal("Datos inválidos. Asegúrate de que la descripción no esté vacía y el monto sea un número positivo.");
+        return;
+    }
+
+    let acc = accounts.find(a => a.driverId === currentUser.id && a.status === "pending");
+    if (!acc) {
+        const now = new Date();
+        const year = now.getFullYear();
+        // Calculate week number (simple approximation)
+        const startOfYear = new Date(year, 0, 1);
+        const diff = now - startOfYear;
+        const oneWeek = 1000 * 60 * 60 * 24 * 7;
+        const week = Math.ceil(diff / oneWeek);
+
+        acc = { id: 'a' + Date.now().toString(), driverId: currentUser.id, period: `${year}-W${week}`, amount: 0, deductions: [], status: "pending" };
+        accounts.push(acc);
+    }
+    acc.deductions.push({ id: 'd' + Date.now().toString(), description: desc, amount: amt, status: "pending" });
+
+    document.getElementById("deduct-desc").value = "";
+    document.getElementById("deduct-amount").value = "";
+
+    renderDriverAccount(currentUser);
+    showMessageModal("Deducción enviada a aprobación. Será revisada por el administrador.");
+});
+
+// Mobile Menu Toggle
+const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+const sidebar = document.getElementById('sidebar');
+
+mobileMenuToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('mobile-hidden');
+    sidebar.classList.toggle('mobile-visible');
+});
+
+// Dark Mode Toggle
+const darkModeToggle = document.getElementById('dark-mode-toggle');
+const htmlElement = document.documentElement;
+
+function enableDarkMode() {
+    htmlElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+    darkModeToggle.innerHTML = '<span class="material-icons">light_mode</span>';
+}
+
+function disableDarkMode() {
+    htmlElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+    darkModeToggle.innerHTML = '<span class="material-icons">dark_mode</span>';
+}
+
+darkModeToggle.addEventListener('click', () => {
+    if (htmlElement.classList.contains('dark')) {
+        disableDarkMode();
+    } else {
+        enableDarkMode();
+    }
+});
+
+// Check for saved theme preference on load and set initial state
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        enableDarkMode();
+    } else {
+        disableDarkMode();
+    }
+
+    // Asegura que el contenedor de login esté visible y el de la app oculto al cargar
+    loginContainer.classList.remove('hidden');
+    loginContainer.style.display = 'flex';
+
+    appContainer.classList.add('hidden');
+    appContainer.style.display = 'none';
+
+    // Oculta el botón de menú móvil inicialmente hasta que se inicie sesión
+    document.getElementById('mobile-menu-toggle').classList.add('hidden');
+});

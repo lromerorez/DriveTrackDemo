@@ -3,325 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DriveTrack - Administración</title>
-    <link rel="manifest" href="/manifest.json">
-    <link rel="stylesheet" href="Style.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> </head>
-<body>
-    <div id="login-container">
+    <title>DriveTrack – Gestión de Flotas</title>
+    <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="data:application/json;base64,eyJpY29ucyI6W3sic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyIsInNyYyI6Imh0dHBzOi8vcGxhY2Vob2xkLmNvLzE5MngxOTIvMzQ5OGRiLzAwMDAwMD90ZXh0PWR0In0seyJzaXplcyAiOiI1MTJ4NTEyIiwidHlwZSI6ImltYWdlL3BuZyIsInNyYyI6Imh0dHBzOi8vcGxhY2Vob2xkLmNvLzUxMng1MTIvMzQ5OGRiLzAwMDAwMD90ZXh0PWR0In1dLCJuYW1lIjoiRHJpdmVUcmFjayIsImJhY2tncm91bmRfY29sb3IiOiIjZmZmZmZmIiwidGhlbWVfY29sb3IiOiIjMzk4MmY2Iiwic2hvcnRfbmFtZSI6IkRyaXZlVHJhY2siLCJzdGFydF91cmwiOiIvIiwic3RhbmRhbG9uZSI6ImRpc3BsYXkiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZCJ9">
+</head>
+<body class="bg-gray-100 flex flex-col md:flex-row min-h-screen">
+
+    <!-- Mobile Menu Button -->
+    <button id="mobile-menu-toggle" class="mobile-menu-button">
+        <span class="material-icons">menu</span>
+    </button>
+
+    <!-- LOGIN CONTAINER -->
+    <div id="login-container" class="flex-1 flex items-center justify-center p-4">
         <div class="login-box">
-            <img src="assets/drivetrack_logo.png" alt="DriveTrack Logo" class="login-logo">
-            <h2>Acceso DriveTrack</h2>
+            <img src="https://placehold.co/96x96/3498db/ffffff?text=DT" alt="DriveTrack Logo" class="login-logo" />
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Iniciar Sesión</h2>
+
+            <div class="demo-creds">
+                <p><strong>Admin</strong> → user: <code>admin</code> · pass: <code>admin123</code></p>
+                <p><strong>Conductor</strong> → user: <code>conductor1</code> · pass: <code>demo123</code></p>
+            </div>
+
             <form id="login-form">
-                <input type="text" id="username" placeholder="Usuario" required>
-                <input type="password" id="password" placeholder="Contraseña" required>
-                <button type="submit">Iniciar Sesión</button>
+                <input id="username" placeholder="Usuario" required />
+                <input id="password" type="password" placeholder="Contraseña" required />
+                <button type="submit">Entrar</button>
             </form>
             <p id="login-message" class="error-message"></p>
         </div>
     </div>
 
-    <div id="admin-app-container" class="hidden app-role-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <img src="assets/drivetrack_logo_white.png" alt="DriveTrack Logo" class="app-logo">
-                <h3>DriveTrack Admin</h3>
+    <!-- MAIN APP CONTAINER -->
+    <div id="main-app-container" class="hidden flex-1 md:flex">
+        <aside id="sidebar" class="sidebar w-64 flex-shrink-0 mobile-hidden">
+            <div class="flex flex-col h-full">
+                <div class="sidebar-header">
+                    <img src="https://placehold.co/40x40/3498db/ffffff?text=DT" class="app-logo" alt="App Logo" />
+                    <h3 class="text-xl font-semibold">DriveTrack</h3>
+                </div>
+
+                <!-- ADMIN menu -->
+                <nav id="admin-menu" class="nav-menu hidden flex-grow">
+                    <a data-section="dashboard"><span class="material-icons">dashboard</span>Dashboard</a>
+                    <a data-section="vehicles"><span class="material-icons">directions_car</span>Vehículos</a>
+                    <a data-section="drivers"><span class="material-icons">people</span>Conductores</a>
+                    <a data-section="accounts"><span class="material-icons">receipt_long</span>Cuentas</a>
+                    <a data-section="alerts"><span class="material-icons">notifications_active</span>Alertas</a>
+                </nav>
+
+                <!-- DRIVER menu -->
+                <nav id="driver-menu" class="nav-menu hidden flex-grow">
+                    <a data-section="driver-home"><span class="material-icons">directions_car</span>Mi Auto</a>
+                    <a data-section="driver-account"><span class="material-icons">receipt_long</span>Mi Cuenta</a>
+                </nav>
+                
+                <div class="dark-mode-toggle mt-4" id="dark-mode-toggle">
+                    <span class="material-icons">dark_mode</span>
+                </div>
+
+                <button id="logout-button" class="logout-button">Cerrar Sesión</button>
             </div>
-            <nav class="nav-menu">
-                <a href="#" data-section="dashboard" class="active"><span class="material-icons">dashboard</span> Dashboard</a>
-                <a href="#" data-section="vehicles"><span class="material-icons">directions_car</span> Vehículos</a>
-                <a href="#" data-section="drivers"><span class="material-icons">people</span> Conductores</a>
-                <a href="#" data-section="accounts"><span class="material-icons">receipt_long</span> Cuentas Semanales</a>
-                <a href="#" data-section="alerts"><span class="material-icons">notifications_active</span> Alertas Mantenimiento</a>
-            </nav>
-            <button id="logout-button-admin" class="logout-button">Cerrar Sesión</button>
         </aside>
 
-        <main class="content">
-            <header class="topbar">
-                <h1 id="admin-header-title">Dashboard</h1>
-                <div class="user-info">
-                    <span class="material-icons">account_circle</span> Admin
-                    <div class="notifications">
-                        <span class="material-icons notification-icon">notifications</span>
-                        <span class="notification-badge hidden" id="notification-badge-admin">0</span>
-                        <div class="notification-dropdown hidden" id="notification-dropdown-admin">
-                            <h4>Notificaciones Recientes</h4>
-                            <ul id="notification-list-admin"></ul>
-                            <p class="no-notifications hidden">No hay notificaciones.</p>
-                        </div>
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+            <!-- **** SECCIONES ADMIN **** -->
+            <section id="dashboard-section" class="app-section">
+                <h2>Dashboard</h2>
+                <p class="text-gray-600">Resumen rápido de la flota y operaciones.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                    <div class="bg-blue-50 p-4 rounded-lg shadow-sm text-blue-800">
+                        <h3 class="text-lg font-semibold">Vehículos Totales</h3>
+                        <p class="text-3xl font-bold">15</p>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg shadow-sm text-green-800">
+                        <h3 class="text-lg font-semibold">Conductores Activos</h3>
+                        <p class="text-3xl font-bold">12</p>
+                    </div>
+                    <div class="bg-yellow-50 p-4 rounded-lg shadow-sm text-yellow-800">
+                        <h3 class="text-lg font-semibold">Cuentas Pendientes</h3>
+                        <p class="text-3xl font-bold">3</p>
+                    </div>
+                    <div class="bg-red-50 p-4 rounded-lg shadow-sm text-red-800">
+                        <h3 class="text-lg font-semibold">Alertas de Mantenimiento</h3>
+                        <p class="text-3xl font-bold">2</p>
                     </div>
                 </div>
-            </header>
-
-            <section id="dashboard-section" class="app-section active-section">
-                <div class="summary-cards">
-                    <div class="card">
-                        <span class="material-icons">directions_car</span>
-                        <h3>Coches</h3>
-                        <p id="total-cars">0</p>
-                    </div>
-                    <div class="card">
-                        <span class="material-icons">people</span>
-                        <h3>Conductores</h3>
-                        <p id="total-drivers">0</p>
-                    </div>
-                    <div class="card">
-                        <span class="material-icons">receipt_long</span>
-                        <h3>Cuentas Pendientes</h3>
-                        <p id="pending-accounts">0</p>
-                    </div>
-                    <div class="card">
-                        <span class="material-icons">build</span>
-                        <h3>Servicios por Vencer</h3>
-                        <p id="upcoming-services">0</p>
-                    </div>
-                </div>
-
-                <div class="recent-activity-placeholder">
-                    <h2>Actividad Reciente</h2>
-                    <p>Aquí se mostrarán las últimas acciones (ej. "Cuenta aprobada", "Vehículo añadido").</p>
-                </div>
+                <h3 class="mt-8 mb-4">Actividad Reciente</h3>
+                <ul class="bg-white p-4 rounded-lg shadow-sm space-y-2">
+                    <li class="text-gray-700">Conductor1 envió solicitud de deducción.</li>
+                    <li class="text-gray-700">Vehículo ABC-123 requiere cambio de aceite.</li>
+                    <li class="text-gray-700">Nueva asignación: Conductor2 a Vehículo XYZ-789.</li>
+                </ul>
             </section>
-
+            
             <section id="vehicles-section" class="app-section hidden">
                 <h2>Gestión de Vehículos</h2>
-                <div class="section-actions">
-                    <button id="add-vehicle-btn"><span class="material-icons">add</span> Añadir Nuevo Vehículo</button>
-                    <input type="text" id="vehicle-search" placeholder="Buscar vehículo...">
+                <p class="text-gray-600 mb-4">Listado y gestión de todos los vehículos de la flota.</p>
+                <div class="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+                    <input type="text" id="add-vehicle-plate" placeholder="Placas" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                    <input type="number" id="add-vehicle-bond" placeholder="Fianza" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                    <input type="number" id="add-vehicle-fee" placeholder="Cuota Semanal" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                    <button id="add-vehicle-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200">Añadir Vehículo</button>
                 </div>
-                <table id="vehicles-table">
-                    <thead>
-                        <tr>
-                            <th>Placas</th>
-                            <th>Conductor Asignado</th>
-                            <th>Fianza</th>
-                            <th>Cuota Semanal</th>
-                            <th>Estado de Servicio</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
-
-                <div id="add-vehicle-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <h3>Añadir Nuevo Vehículo</h3>
-                        <form id="add-vehicle-form">
-                            <label for="new-plate">Placas:</label>
-                            <input type="text" id="new-plate" required>
-                            <label for="new-driver-assign">Asignar Conductor:</label>
-                            <select id="new-driver-assign">
-                                <option value="">Sin Asignar</option>
-                                </select>
-                            <label for="new-bond">Fianza:</label>
-                            <input type="number" id="new-bond" step="0.01" required>
-                            <label for="new-fee">Cuota Semanal:</label>
-                            <input type="number" id="new-fee" step="0.01" required>
-                            <label for="new-service-date">Fecha Último Servicio:</label>
-                            <input type="date" id="new-service-date" required>
-                            <label for="new-service-mileage">Kilometraje Último Servicio:</label>
-                            <input type="number" id="new-service-mileage" required>
-                            <button type="submit">Guardar Vehículo</button>
-                            <button type="button" class="close-modal-btn">Cancelar</button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-
-            <section id="drivers-section" class="app-section hidden">
-                <h2>Gestión de Conductores</h2>
-                <div class="section-actions">
-                    <button id="add-driver-btn"><span class="material-icons">person_add</span> Añadir Nuevo Conductor</button>
-                    <input type="text" id="driver-search" placeholder="Buscar conductor...">
-                    <select id="driver-filter-status">
-                        <option value="all">Todos los estados</option>
-                        <option value="active">Activo</option>
-                        <option value="debt">Con Deuda</option>
-                        <option value="no-vehicle">Sin Vehículo</option>
-                    </select>
-                </div>
-                <table id="drivers-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Contacto</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        </tbody>
-                </table>
-
-                <div id="add-driver-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <h3>Añadir Nuevo Conductor</h3>
-                        <form id="add-driver-form">
-                            <label for="new-driver-name">Nombre:</label>
-                            <input type="text" id="new-driver-name" required>
-                            <label for="new-driver-contact">Contacto:</label>
-                            <input type="text" id="new-driver-contact" required>
-                            <button type="submit">Guardar Conductor</button>
-                            <button type="button" class="close-modal-btn">Cancelar</button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-
-            <section id="accounts-section" class="app-section hidden">
-                <h2>Cuentas Semanales por Aprobar</h2>
-                <div class="section-actions">
-                    <input type="text" id="accounts-search" placeholder="Buscar cuenta...">
-                    <button id="generate-new-accounts-btn"><span class="material-icons">refresh</span> Generar Cuentas (Simulado)</button>
-                </div>
-                <div id="pending-accounts-list" class="todo-list">
-                    </div>
-                <div class="accounts-history">
-                    <h3>Historial de Cuentas Aprobadas</h3>
-                    <table id="approved-accounts-table">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-sm dark:bg-gray-800">
                         <thead>
-                            <tr>
-                                <th>Conductor</th>
-                                <th>Período</th>
-                                <th>Monto Aprobado</th>
-                                <th>Deducciones</th>
-                                <th>Fecha Aprobación</th>
+                            <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:bg-gray-700 dark:text-gray-300">
+                                <th class="py-3 px-4 rounded-tl-lg">Placas</th>
+                                <th class="py-3 px-4">Conductor</th>
+                                <th class="py-3 px-4">Fianza</th>
+                                <th class="py-3 px-4">Cuota Semanal</th>
+                                <th class="py-3 px-4">Último Servicio</th>
+                                <th class="py-3 px-4 rounded-tr-lg">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            </tbody>
+                        <tbody id="vehicles-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Data will be rendered here by JS -->
+                        </tbody>
                     </table>
                 </div>
-
-                <div id="review-account-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <h3>Revisar Cuenta Semanal</h3>
-                        <p>Conductor: <strong id="review-account-driver"></strong></p>
-                        <p>Período: <strong id="review-account-period"></strong></p>
-                        <label for="review-account-amount">Monto Calculado:</label>
-                        <input type="number" id="review-account-amount" step="0.01" required>
-                        <h4>Deducciones:</h4>
-                        <div id="deductions-list">
-                            </div>
-                        <div class="add-deduction-form">
-                            <input type="text" id="new-deduction-desc" placeholder="Descripción deducción">
-                            <input type="number" id="new-deduction-amount" step="0.01" placeholder="Monto">
-                            <button id="add-deduction-btn">Añadir Deducción</button>
-                        </div>
-                        <div class="modal-actions">
-                            <button id="approve-account-btn" class="approve-btn">Aprobar Cuenta</button>
-                            <button type="button" class="close-modal-btn">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
             </section>
-
-            <section id="alerts-section" class="app-section hidden">
-                <h2>Alertas de Mantenimiento Próximo</h2>
-                <p class="no-alerts-message hidden">No hay alertas de mantenimiento actualmente.</p>
-                <div id="maintenance-alerts-list">
-                    </div>
-            </section>
-        </main>
-    </div>
-
-    <div id="driver-app-container" class="hidden app-role-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <img src="assets/drivetrack_logo_white.png" alt="DriveTrack Logo" class="app-logo">
-                <h3>DriveTrack Conductor</h3>
-            </div>
-            <nav class="nav-menu">
-                <a href="#" data-section="driver-dashboard" class="active"><span class="material-icons">person</span> Mi Panel</a>
-                <a href="#" data-section="driver-vehicle"><span class="material-icons">directions_car</span> Mi Vehículo</a>
-                <a href="#" data-section="driver-accounts"><span class="material-icons">receipt_long</span> Mis Cuentas</a>
-                <a href="#" data-section="driver-alerts"><span class="material-icons">notifications_active</span> Mis Alertas</a>
-            </nav>
-            <button id="logout-button-driver" class="logout-button">Cerrar Sesión</button>
-        </aside>
-
-        <main class="content">
-            <header class="topbar">
-                <h1 id="driver-header-title">Mi Panel</h1>
-                <div class="user-info">
-                    <span class="material-icons">account_circle</span> <span id="current-driver-name">Conductor</span>
-                    <div class="notifications">
-                        <span class="material-icons notification-icon">notifications</span>
-                        <span class="notification-badge hidden" id="notification-badge-driver">0</span>
-                        <div class="notification-dropdown hidden" id="notification-dropdown-driver">
-                            <h4>Notificaciones Recientes</h4>
-                            <ul id="notification-list-driver"></ul>
-                            <p class="no-notifications hidden">No hay notificaciones.</p>
-                        </div>
-                    </div>
+            
+            <section id="drivers-section" class="app-section hidden">
+                <h2>Gestión de Conductores</h2>
+                <p class="text-gray-600 mb-4">Directorio completo y asignación de conductores.</p>
+                <div class="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
+                    <input type="text" id="add-driver-name" placeholder="Nombre" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                    <input type="text" id="add-driver-username" placeholder="Usuario" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                    <input type="password" id="add-driver-password" placeholder="Contraseña" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                    <button id="add-driver-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200">Añadir Conductor</button>
                 </div>
-            </header>
-
-            <section id="driver-dashboard-section" class="app-section active-section">
-                <h2>Bienvenido, <span id="driver-dashboard-name">Conductor</span></h2>
-                <div class="summary-cards">
-                    <div class="card">
-                        <span class="material-icons">receipt_long</span>
-                        <h3>Cuentas Pendientes</h3>
-                        <p id="driver-pending-accounts">0</p>
-                    </div>
-                    <div class="card">
-                        <span class="material-icons">build</span>
-                        <h3>Próximo Servicio</h3>
-                        <p id="driver-upcoming-service">N/A</p>
-                    </div>
-                </div>
-                <div class="recent-activity-placeholder">
-                    <h2>Últimas Novedades</h2>
-                    <p>Aquí verás información relevante sobre tu vehículo y cuentas.</p>
-                </div>
-            </section>
-
-            <section id="driver-vehicle-section" class="app-section hidden">
-                <h2>Mi Vehículo Asignado</h2>
-                <div id="driver-vehicle-details">
-                    <p><strong>Placas:</strong> <span id="driver-vehicle-plate">N/A</span></p>
-                    <p><strong>Fianza:</strong> <span id="driver-vehicle-bond">N/A</span></p>
-                    <p><strong>Cuota Semanal:</strong> <span id="driver-vehicle-fee">N/A</span></p>
-                    <p><strong>Último Servicio:</strong> <span id="driver-vehicle-last-service">N/A</span></p>
-                    <p><strong>Kilometraje Último Servicio:</strong> <span id="driver-vehicle-last-mileage">N/A</span></p>
-                    <p><strong>Estado de Servicio:</strong> <span id="driver-vehicle-status" class="status-badge">N/A</span></p>
-                </div>
-                <p id="no-vehicle-assigned" class="hidden error-message">No tienes un vehículo asignado actualmente.</p>
-            </section>
-
-            <section id="driver-accounts-section" class="app-section hidden">
-                <h2>Mis Cuentas Semanales</h2>
-                <h3>Cuentas Pendientes</h3>
-                <div id="driver-pending-accounts-list" class="todo-list">
-                    <p class="no-notifications">No tienes cuentas pendientes.</p>
-                </div>
-                <h3>Historial de Cuentas Aprobadas</h3>
-                <table id="driver-approved-accounts-table">
-                    <thead>
-                        <tr>
-                            <th>Período</th>
-                            <th>Monto Aprobado</th>
-                            <th>Deducciones</th>
-                            <th>Fecha Aprobación</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                 <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-sm dark:bg-gray-800">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:bg-gray-700 dark:text-gray-300">
+                                <th class="py-3 px-4 rounded-tl-lg">Nombre</th>
+                                <th class="py-3 px-4">Usuario</th>
+                                <th class="py-3 px-4">Vehículo Asignado</th>
+                                <th class="py-3 px-4">Estado</th>
+                                <th class="py-3 px-4 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drivers-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Data will be rendered here by JS -->
                         </tbody>
-                </table>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="accounts-section" class="app-section hidden">
+                <h2>Cuentas Semanales</h2>
+                <p class="text-gray-600 mb-4">Revisión y aprobación de cuentas de conductores.</p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-sm dark:bg-gray-800">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:bg-gray-700 dark:text-gray-300">
+                                <th class="py-3 px-4 rounded-tl-lg">Conductor</th>
+                                <th class="py-3 px-4">Período</th>
+                                <th class="py-3 px-4">Monto Base</th>
+                                <th class="py-3 px-4">Deducciones</th>
+                                <th class="py-3 px-4">Estado</th>
+                                <th class="py-3 px-4 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounts-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Data will be rendered here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="alerts-section" class="app-section hidden">
+                <h2>Alertas y Notificaciones</h2>
+                <p class="text-gray-600 mb-4">Alertas de mantenimiento y otras notificaciones importantes.</p>
+                <ul id="alerts-list" class="bg-white p-4 rounded-lg shadow-sm space-y-2 dark:bg-gray-800">
+                    <li class="text-red-600 font-semibold">Vehículo ABC-123: Mantenimiento urgente (frenos).</li>
+                    <li class="text-yellow-600 font-semibold">Vehículo XYZ-789: Próximo servicio (cambio de aceite).</li>
+                    <li class="text-blue-600">Nueva solicitud de deducción de Conductor1.</li>
+                </ul>
             </section>
 
-            <section id="driver-alerts-section" class="app-section hidden">
-                <h2>Mis Alertas de Mantenimiento</h2>
-                <p class="no-alerts-message hidden">No hay alertas de mantenimiento para tu vehículo.</p>
-                <div id="driver-maintenance-alerts-list">
-                    </div>
+            <!-- **** SECCIONES CONDUCTOR **** -->
+            <section id="driver-home-section" class="app-section hidden">
+                <h2>Mi Vehículo</h2>
+                <p class="text-gray-600 mb-4">Información detallada de tu vehículo asignado y su estado de mantenimiento.</p>
+                <div id="driver-car-info" class="bg-white p-6 rounded-lg shadow-sm space-y-2 text-gray-700 dark:bg-gray-800">
+                    <p>Cargando información del vehículo...</p>
+                </div>
+            </section>
+
+            <section id="driver-account-section" class="app-section hidden">
+                <h2>Mi Cuenta Semanal</h2>
+                <p class="text-gray-600 mb-4">Revisa el estado de tu cuenta semanal y solicita deducciones.</p>
+                
+                <div id="driver-account-info" class="bg-white p-6 rounded-lg shadow-sm space-y-2 text-gray-700 mb-6 dark:bg-gray-800">
+                    <p>Cargando información de la cuenta...</p>
+                </div>
+
+                <h3 class="mb-3">Solicitar Deducción</h3>
+                <div class="bg-white p-6 rounded-lg shadow-sm flex flex-col md:flex-row items-center gap-4 dark:bg-gray-800">
+                    <input id="deduct-desc" class="flex-1 p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Descripción (ej. Reparación de llanta)" />
+                    <input id="deduct-amount" type="number" step="0.01" class="w-24 p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Monto" />
+                    <button id="send-deduction-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200">Enviar Solicitud</button>
+                </div>
+
+                <h3 class="mt-6 mb-3">Mis Deducciones</h3>
+                <div id="driver-deductions-list" class="bg-white p-6 rounded-lg shadow-sm space-y-2 text-gray-700 dark:bg-gray-800">
+                    <p>No hay deducciones registradas.</p>
+                </div>
             </section>
         </main>
     </div>
 
+    <!-- Custom Message Modal -->
+    <div id="message-modal-overlay" class="modal-overlay hidden" style="display: none;">
+        <div class="modal-content">
+            <p id="message-modal-text" class="text-gray-800 text-lg"></p>
+            <button id="message-modal-close">Aceptar</button>
+        </div>
+    </div>
+
+    <!-- Script para registrar el Service Worker -->
+    <script src="service-worker.js"></script>
+    <!-- Script principal de la aplicación -->
     <script src="script.js"></script>
 </body>
 </html>
