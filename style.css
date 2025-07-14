@@ -11,6 +11,11 @@ body {
     color: #f3f4f6; /* text-gray-100 */
 }
 
+/* --- Tailwind's hidden class definition (CRUCIAL FIX) --- */
+.hidden {
+    display: none !important;
+}
+
 .login-box {
     background-color: #ffffff; /* bg-white */
     padding: 2rem; /* p-8 */
@@ -33,23 +38,23 @@ body {
     border-radius: 9999px; /* rounded-full */
 }
 .demo-creds {
-    background-color: #eff6ff; /* bg-blue-50 */
-    color: #1e40af; /* text-blue-800 */
+    background-color: #e0f7fa; /* Atenuado: de bg-blue-50 a un azul-cian más suave */
+    color: #00796b; /* Atenuado: de text-blue-800 a un teal más suave */
     font-size: 0.875rem; /* text-sm */
     padding: 0.75rem; /* p-3 */
     border-radius: 0.5rem; /* rounded-lg */
     margin-bottom: 1rem; /* mb-4 */
 }
 .dark .demo-creds {
-    background-color: #1e3a8a; /* bg-blue-900 */
-    color: #bfdbfe; /* text-blue-200 */
+    background-color: #004d40; /* bg-blue-900 atenuado */
+    color: #80cbc4; /* text-blue-200 atenuado */
 }
 .demo-creds code {
     font-family: monospace; /* font-mono */
-    color: #1e40af; /* text-blue-900 */
+    color: #004d40; /* text-blue-900 atenuado */
 }
 .dark .demo-creds code {
-    color: #93c5fd; /* text-blue-300 */
+    color: #b2dfdb; /* text-blue-300 atenuado */
 }
 .login-box input {
     width: 100%;
@@ -165,8 +170,12 @@ body {
     margin-bottom: 1.5rem; /* mb-6 */
 }
 .dark .app-section {
-    background-color: #1f2937; /* bg-gray-800 */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+    background-color: #1f2937; /* Solid background, no glass effect */
+    /* backdrop-filter: blur(8px); */ /* Removed glass effect */
+    /* -webkit-backdrop-filter: blur(8px); */ /* Removed glass effect */
+    border: 1px solid rgba(75, 85, 99, 0.3); /* Subtle border */
+    border-radius: 0.75rem; /* rounded-xl for consistency */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 .app-section h2 {
     font-size: 1.5rem; /* text-2xl */
@@ -186,40 +195,100 @@ body {
 .dark .app-section h3 {
     color: #e5e7eb; /* text-gray-200 */
 }
-.app-section input {
-    padding: 0.5rem; /* p-2 */
-    border-width: 1px; /* border */
-    border-color: #d1d5db; /* border-gray-300 */
-    border-radius: 0.375rem; /* rounded-md */
-    margin-bottom: 0.5rem; /* mb-2 */
+/* Input and Select Glassmorphism style */
+.app-section input, .app-section select {
+    padding: 0.5rem;
+    border-width: 1px;
+    border-color: #d1d5db;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
     width: 100%;
-    max-width: 8rem; /* max-w-xs */
+    background-color: rgba(255, 255, 255, 0.8); /* Light glass effect */
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.dark .app-section input {
-    background-color: #374151; /* bg-gray-700 */
+.dark .app-section input, .dark .app-section select {
+    background-color: #374151; /* Solid background in dark mode */
     border-color: #4b5563; /* border-gray-600 */
     color: #ffffff; /* text-white */
+    backdrop-filter: none; /* Removed glass effect */
+    -webkit-backdrop-filter: none; /* Removed glass effect */
 }
+.app-section input:focus, .app-section select:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    border-color: #3b82f6;
+}
+.dark .app-section input:focus, .dark .app-section select:focus {
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+    border-color: #60a5fa;
+}
+
+/* Base style for all buttons, to be overridden by specific classes */
 .app-section button {
-    background-color: #3b82f6; /* bg-blue-500 */
-    color: #ffffff; /* text-white */
-    padding-left: 1rem; /* px-4 */
-    padding-right: 1rem; /* px-4 */
-    padding-top: 0.5rem; /* py-2 */
-    padding-bottom: 0.5rem; /* py-2 */
+    background-color: transparent; /* No background by default */
+    color: #3b82f6; /* Default icon color */
+    padding: 0.5rem; /* Minimal padding for icons */
+    border: none; /* No border by default */
     border-radius: 0.375rem; /* rounded-md */
-    transition-property: background-color; /* transition-colors */
-    transition-duration: 200ms; /* duration-200 */
+    transition-property: background-color, color;
+    transition-duration: 200ms;
+    display: inline-flex; /* To center icon */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
-.app-section button:hover {
-    background-color: #2563eb; /* hover:bg-blue-600 */
+
+/* Specific styling for buttons that are NOT just icons (like "Entrar" or "Cerrar Sesión") */
+.login-box button,
+.logout-button {
+    background-color: #2563eb; /* Specific background for these */
+    color: #ffffff;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    border: none; /* Ensure no border */
 }
-.dark .app-section button {
-    background-color: #1d4ed8; /* bg-blue-700 */
+
+/* Icon-only buttons */
+.icon-button {
+    background-color: transparent !important; /* Force no background */
+    border: none !important; /* Force no border */
+    padding: 0.5rem !important; /* Consistent padding for icons */
+    color: #3b82f6; /* Default blue for icons */
 }
-.dark .app-section button:hover {
-    background-color: #1e40af; /* hover:bg-blue-800 */
+
+.icon-button:hover {
+    background-color: rgba(59, 130, 246, 0.1); /* Subtle hover background */
+    color: #2563eb; /* Darker blue on hover */
 }
+
+.dark .icon-button {
+    color: #60a5fa; /* Lighter blue for icons in dark mode */
+}
+
+.dark .icon-button:hover {
+    background-color: rgba(96, 165, 250, 0.1); /* Subtle hover background in dark mode */
+    color: #93c5fd; /* Even lighter blue on hover in dark mode */
+}
+
+/* Specific color for delete icons */
+.icon-button.delete-button {
+    color: #dc2626; /* Red for delete icons */
+}
+
+.icon-button.delete-button:hover {
+    background-color: rgba(220, 38, 38, 0.1); /* Subtle red hover */
+    color: #b91c1c; /* Darker red on hover */
+}
+
+.dark .icon-button.delete-button {
+    color: #ef4444; /* Lighter red for delete icons in dark mode */
+}
+
+.dark .icon-button.delete-button:hover {
+    background-color: rgba(239, 68, 68, 0.1); /* Subtle red hover in dark mode */
+    color: #fca5a5; /* Even lighter red on hover in dark mode */
+}
+
 
 /* Custom Modal Styles */
 .modal-overlay {
@@ -231,15 +300,15 @@ body {
     background-color: rgba(0, 0, 0, 0.5); /* bg-black bg-opacity-50 */
     align-items: center;
     justify-content: center;
-    z-index: 50; /* z-50 */
+    z-index: 100; /* z-100 para que esté por encima de todo */
 }
 .modal-content {
     background-color: #ffffff; /* bg-white */
     padding: 1.5rem; /* p-6 */
     border-radius: 0.5rem; /* rounded-lg */
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* shadow-xl */
-    max-width: 28rem; /* max-w-sm */
-    width: 91.666667%; /* w-11/12 */
+    max-width: 90%; /* Ajuste para mejor responsividad */
+    width: 28rem; /* max-w-sm */
     text-align: center;
 }
 .dark .modal-content {
@@ -259,61 +328,99 @@ body {
     background-color: #1d4ed8; /* hover:bg-blue-700 */
 }
 
-/* Mobile Menu Specific Styles */
+/* Mobile Menu Button */
 .mobile-menu-button {
     position: fixed;
     top: 1rem; /* top-4 */
     left: 1rem; /* left-4 */
-    background-color: #2563eb; /* bg-blue-600 */
-    color: #ffffff; /* text-white */
-    padding: 0.75rem; /* p-3 */
-    border-radius: 9999px; /* rounded-full */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
-    z-index: 40; /* z-40 */
-}
-.mobile-menu-button:hover {
-    background-color: #1d4ed8; /* hover:bg-blue-700 */
-}
-.dark .mobile-menu-button {
-    background-color: #1d4ed8; /* bg-blue-700 */
-}
-.sidebar.mobile-hidden {
-    display: none;
-}
-@media (min-width: 768px) { /* md: */
-    .sidebar.mobile-hidden {
-        display: flex;
-    }
-    .mobile-menu-button {
-        display: none;
-    }
-}
-.sidebar.mobile-visible {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 30; /* z-30 */
-    width: 16rem; /* w-64 */
-    display: flex;
+    z-index: 50; /* z-50 para que esté por encima del contenido */
 }
 
-/* Specific elements for dark mode */
-.dark .bg-blue-50 { background-color: #1e3a8a; } /* bg-blue-900 */
-.dark .text-blue-800 { color: #bfdbfe; } /* text-blue-200 */
-.dark .bg-green-50 { background-color: #065f46; } /* bg-green-900 */
-.dark .text-green-800 { color: #a7f3d0; } /* text-green-200 */
-.dark .bg-yellow-50 { background-color: #92400e; } /* bg-yellow-900 */
-.dark .text-yellow-800 { color: #fde68a; } /* text-yellow-200 */
-.dark .bg-red-50 { background-color: #7f1d1d; } /* bg-red-900 */
-.dark .text-red-800 { color: #fecaca; } /* text-red-200 */
-.dark .bg-white { background-color: #374151; } /* bg-gray-700 */
+/* Notification Icon */
+.notification-icon {
+    position: fixed;
+    top: 1rem; /* top-4 */
+    right: 1rem; /* right-4 */
+    z-index: 50; /* z-50 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -0.25rem; /* -top-1 */
+    right: -0.25rem; /* -right-1 */
+    background-color: #ef4444; /* bg-red-500 */
+    color: white;
+    font-size: 0.75rem; /* text-xs */
+    font-weight: bold;
+    border-radius: 9999px; /* rounded-full */
+    padding: 0.2rem 0.4rem; /* px-1.5 py-0.5 */
+    min-width: 1.25rem; /* w-5 */
+    text-align: center;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.notification-badge.active {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+
+/* Dashboard Cards with Transparency */
+.dashboard-card {
+    padding: 1.5rem; /* p-6 */
+    border-radius: 0.75rem; /* rounded-lg */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Light Mode Card Colors with Transparency (Atenuados) */
+.dashboard-card.bg-blue-50 { background-color: rgba(59, 130, 246, 0.1); color: #1e40af; } /* blue-500 with 10% opacity */
+.dashboard-card.bg-green-50 { background-color: rgba(16, 185, 129, 0.1); color: #065f46; } /* green-500 with 10% opacity */
+.dashboard-card.bg-yellow-50 { background-color: rgba(234, 179, 8, 0.1); color: #92400e; } /* yellow-500 with 10% opacity */
+.dashboard-card.bg-red-50 { background-color: rgba(239, 68, 68, 0.1); color: #7f1d1d; } /* red-500 with 10% opacity */
+
+/* Dark Mode Card Colors with Transparency (Atenuados) */
+.dark .dashboard-card.bg-blue-50 { background-color: rgba(59, 130, 246, 0.05); color: #93c5fd; } /* blue-500 with 5% opacity, light text */
+.dark .dashboard-card.bg-green-50 { background-color: rgba(16, 185, 129, 0.05); color: #a7f3d0; } /* green-500 with 5% opacity, light text */
+.dark .dashboard-card.bg-yellow-50 { background-color: rgba(234, 179, 8, 0.05); color: #fde68a; } /* yellow-500 with 5% opacity, light text */
+.dark .dashboard-card.bg-red-50 { background-color: rgba(239, 68, 68, 0.05); color: #fecaca; } /* red-500 with 5% opacity, light text */
+
+
+/* Specific elements for dark mode (re-defining for consistency with new transparency) */
+.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.05); } /* Re-using for general elements if needed, but cards use .dashboard-card */
+.dark .text-blue-800 { color: #bfdbfe; }
+.dark .bg-green-50 { background-color: rgba(16, 185, 129, 0.05); }
+.dark .text-green-800 { color: #a7f3d0; }
+.dark .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.05); }
+.dark .text-yellow-800 { color: #fde68a; }
+.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.05); }
+.dark .text-red-800 { color: #fecaca; }
+
+.dark .bg-white { background-color: #37415100; } /* bg-gray-700 */
 .dark .text-gray-600 { color: #d1d5db; } /* text-gray-300 */
 .dark .text-gray-700 { color: #e5e7eb; } /* text-gray-200 */
 .dark .text-gray-900 { color: #f3f4f6; } /* text-gray-100 */
 .dark .divide-gray-200 { border-color: #4b5563; } /* divide-gray-600 */
 .dark .bg-gray-100 { background-color: #374151; } /* bg-gray-700 */
-.dark .bg-gray-50 { background-color: #4b5563; } /* bg-gray-600 */
+.dark .bg-gray-50 { background-color: #4b556300; } /* bg-gray-600 */
 .dark .hover\:bg-gray-50:hover { background-color: #4b5563; } /* hover:bg-gray-600 */
 .dark .border-gray-300 { border-color: #4b5563; } /* border-gray-600 */
 .dark .focus\:ring-blue-500:focus { box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5); } /* focus:ring-blue-400 */
@@ -343,4 +450,32 @@ body {
 }
 .dark-mode-toggle .material-icons {
     color: #ffffff; /* text-white */
+}
+
+/* Ensure main content has enough top padding to clear fixed headers */
+main {
+    padding-top: 5rem; /* Adjust as needed based on header height */
+}
+
+@media (min-width: 768px) { /* md: */
+    .sidebar.mobile-hidden {
+        display: flex;
+    }
+    .mobile-menu-button {
+        display: none;
+    }
+    /* Reset padding-top for desktop as sidebar takes care of space */
+    main {
+        padding-top: 2rem; /* md:pt-8 */
+    }
+}
+
+.sidebar.mobile-visible {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30; /* z-30 */
+    width: 16rem; /* w-64 */
+    display: flex;
 }
