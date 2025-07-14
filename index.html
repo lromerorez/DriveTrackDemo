@@ -15,8 +15,13 @@
 <body class="bg-gray-100 flex flex-col md:flex-row min-h-screen">
 
     <!-- Mobile Menu Button -->
-    <button id="mobile-menu-toggle" class="mobile-menu-button">
+    <button id="mobile-menu-toggle" class="mobile-menu-button icon-button">
         <span class="material-icons">menu</span>
+    </button>
+    <!-- Notification Icon -->
+    <button id="notification-icon" class="notification-icon icon-button">
+        <span class="material-icons">notifications</span>
+        <span id="notification-count" class="notification-badge">0</span>
     </button>
 
     <!-- LOGIN CONTAINER -->
@@ -41,7 +46,7 @@
 
     <!-- MAIN APP CONTAINER -->
     <div id="main-app-container" class="hidden flex-1 md:flex">
-        <aside id="sidebar" class="sidebar w-64 flex-shrink-0 mobile-hidden">
+        <aside id="sidebar" class="sidebar md:w-64 flex-shrink-0 mobile-hidden">
             <div class="flex flex-col h-full">
                 <div class="sidebar-header">
                     <img src="https://placehold.co/40x40/3498db/ffffff?text=DT" class="app-logo" alt="App Logo" />
@@ -55,6 +60,7 @@
                     <a data-section="drivers"><span class="material-icons">people</span>Conductores</a>
                     <a data-section="accounts"><span class="material-icons">receipt_long</span>Cuentas</a>
                     <a data-section="alerts"><span class="material-icons">notifications_active</span>Alertas</a>
+                    <a data-section="programmable-alerts"><span class="material-icons">schedule_send</span>Programar Alertas</a>
                 </nav>
 
                 <!-- DRIVER menu -->
@@ -71,46 +77,126 @@
             </div>
         </aside>
 
-        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main class="flex-1 p-4 md:p-8 overflow-y-auto pt-16 md:pt-8">
             <!-- **** SECCIONES ADMIN **** -->
             <section id="dashboard-section" class="app-section">
                 <h2>Dashboard</h2>
                 <p class="text-gray-600">Resumen rápido de la flota y operaciones.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                    <div class="bg-blue-50 p-4 rounded-lg shadow-sm text-blue-800">
-                        <h3 class="text-lg font-semibold">Vehículos Totales</h3>
+                    <div class="dashboard-card bg-blue-50 text-blue-800">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Vehículos Totales</h3>
+                            <span class="material-icons text-4xl opacity-75">directions_car</span>
+                        </div>
                         <p class="text-3xl font-bold">15</p>
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg shadow-sm text-green-800">
-                        <h3 class="text-lg font-semibold">Conductores Activos</h3>
+                    <div class="dashboard-card bg-green-50 text-green-800">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Conductores Activos</h3>
+                            <span class="material-icons text-4xl opacity-75">people</span>
+                        </div>
                         <p class="text-3xl font-bold">12</p>
                     </div>
-                    <div class="bg-yellow-50 p-4 rounded-lg shadow-sm text-yellow-800">
-                        <h3 class="text-lg font-semibold">Cuentas Pendientes</h3>
+                    <div class="dashboard-card bg-yellow-50 text-yellow-800">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Cuentas Pendientes</h3>
+                            <span class="material-icons text-4xl opacity-75">receipt_long</span>
+                        </div>
                         <p class="text-3xl font-bold">3</p>
                     </div>
-                    <div class="bg-red-50 p-4 rounded-lg shadow-sm text-red-800">
-                        <h3 class="text-lg font-semibold">Alertas de Mantenimiento</h3>
+                    <div class="dashboard-card bg-red-50 text-red-800">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold">Alertas de Mantenimiento</h3>
+                            <span class="material-icons text-4xl opacity-75">notifications_active</span>
+                        </div>
                         <p class="text-3xl font-bold">2</p>
                     </div>
                 </div>
                 <h3 class="mt-8 mb-4">Actividad Reciente</h3>
-                <ul class="bg-white p-4 rounded-lg shadow-sm space-y-2">
-                    <li class="text-gray-700">Conductor1 envió solicitud de deducción.</li>
-                    <li class="text-gray-700">Vehículo ABC-123 requiere cambio de aceite.</li>
-                    <li class="text-gray-700">Nueva asignación: Conductor2 a Vehículo XYZ-789.</li>
+                <ul class="bg-white p-4 rounded-lg shadow-sm space-y-2 dark:bg-gray-800">
+                    <li class="text-gray-700 dark:text-gray-200">Conductor1 envió solicitud de deducción.</li>
+                    <li class="text-gray-700 dark:text-gray-200">Vehículo ABC-123 requiere cambio de aceite.</li>
+                    <li class="text-gray-700 dark:text-gray-200">Nueva asignación: Conductor2 a Vehículo XYZ-789.</li>
                 </ul>
             </section>
             
-            <section id="vehicles-section" class="app-section hidden">
+            <section id="vehicles-section" class="app-section">
                 <h2>Gestión de Vehículos</h2>
                 <p class="text-gray-600 mb-4">Listado y gestión de todos los vehículos de la flota.</p>
                 <div class="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-gray-50 rounded-lg dark:bg-gray-700">
                     <input type="text" id="add-vehicle-plate" placeholder="Placas" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
                     <input type="number" id="add-vehicle-bond" placeholder="Fianza" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
                     <input type="number" id="add-vehicle-fee" placeholder="Cuota Semanal" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                    <button id="add-vehicle-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200">Añadir Vehículo</button>
+                    <button id="add-vehicle-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200 icon-button"><span class="material-icons">add_circle</span></button>
                 </div>
+
+                <h3 class="mt-6 mb-3">Mantenimiento por Vehículo</h3>
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6 dark:bg-gray-800">
+                    <h4 class="font-semibold text-lg mb-4">Detalles de Mantenimiento</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Verificación Vehicular -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Verificación Vehicular (Emisiones)</label>
+                            <input type="date" id="maint-verificacion-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Última Verificación" />
+                            <input type="date" id="maint-verificacion-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próxima Verificación" />
+                        </div>
+                        <!-- Seguro de Responsabilidad Civil Obligatorio -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Seguro de Responsabilidad Civil Obligatorio</label>
+                            <input type="date" id="maint-seguro-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Último Seguro" />
+                            <input type="date" id="maint-seguro-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próximo Seguro" />
+                        </div>
+                        <!-- Cambio de Aceite y Filtro de Aceite -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Cambio de Aceite y Filtro de Aceite</label>
+                            <input type="date" id="maint-aceite-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Último Cambio de Aceite" />
+                            <input type="date" id="maint-aceite-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próximo Cambio de Aceite" />
+                        </div>
+                        <!-- Filtro de Aire del Motor -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Filtro de Aire del Motor</label>
+                            <input type="date" id="maint-filtro-aire-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Último Filtro de Aire" />
+                            <input type="date" id="maint-filtro-aire-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próximo Filtro de Aire" />
+                        </div>
+                        <!-- Rotación y Balanceo de Neumáticos -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Rotación y Balanceo de Neumáticos</label>
+                            <input type="date" id="maint-neumaticos-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Última Rotación" />
+                            <input type="date" id="maint-neumaticos-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próxima Rotación" />
+                        </div>
+                        <!-- Revisión y/o Cambio de Frenos (Pastillas y Discos) -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Revisión y/o Cambio de Frenos</label>
+                            <input type="date" id="maint-frenos-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Última Revisión de Frenos" />
+                            <input type="date" id="maint-frenos-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próxima Revisión de Frenos" />
+                        </div>
+                        <!-- Alineación de la Dirección -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Alineación de la Dirección</label>
+                            <input type="date" id="maint-alineacion-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Última Alineación" />
+                            <input type="date" id="maint-alineacion-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próxima Alineación" />
+                        </div>
+                        <!-- Revisión de la Suspensión (Amortiguadores y Componentes) -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Revisión de la Suspensión</label>
+                            <input type="date" id="maint-suspension-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Última Revisión de Suspensión" />
+                            <input type="date" id="maint-suspension-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próxima Revisión de Suspensión" />
+                        </div>
+                        <!-- Bujías -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Bujías</label>
+                            <input type="date" id="maint-bujias-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Último Cambio de Bujías" />
+                            <input type="date" id="maint-bujias-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próximo Cambio de Bujías" />
+                        </div>
+                        <!-- Reemplazo de Líquido de Frenos y de Dirección Asistida -->
+                        <div class="maintenance-item p-3 border rounded-md dark:border-gray-600 flex flex-col gap-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200">Reemplazo de Líquido de Frenos y Dirección Asistida</label>
+                            <input type="date" id="maint-liquido-last" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Último Cambio de Líquidos" />
+                            <input type="date" id="maint-liquido-next" class="p-2 border rounded-md w-full dark:bg-gray-600 dark:border-gray-500 dark:text-white" title="Próximo Cambio de Líquidos" />
+                        </div>
+                    </div>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white rounded-lg shadow-sm dark:bg-gray-800">
                         <thead>
@@ -119,7 +205,8 @@
                                 <th class="py-3 px-4">Conductor</th>
                                 <th class="py-3 px-4">Fianza</th>
                                 <th class="py-3 px-4">Cuota Semanal</th>
-                                <th class="py-3 px-4">Último Servicio</th>
+                                <th class="py-3 px-4">Último Servicio General</th>
+                                <th class="py-3 px-4">Alertas Mantenimiento</th>
                                 <th class="py-3 px-4 rounded-tr-lg">Acciones</th>
                             </tr>
                         </thead>
@@ -137,7 +224,7 @@
                     <input type="text" id="add-driver-name" placeholder="Nombre" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
                     <input type="text" id="add-driver-username" placeholder="Usuario" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
                     <input type="password" id="add-driver-password" placeholder="Contraseña" class="p-2 border rounded-md w-full md:w-auto dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
-                    <button id="add-driver-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200">Añadir Conductor</button>
+                    <button id="add-driver-btn" class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200 icon-button"><span class="material-icons">person_add</span></button>
                 </div>
                  <div class="overflow-x-auto">
                     <table class="min-w-full bg-white rounded-lg shadow-sm dark:bg-gray-800">
@@ -189,6 +276,49 @@
                 </ul>
             </section>
 
+            <!-- **** SECCIÓN: PROGRAMAR ALERTAS (ADMIN) **** -->
+            <section id="programmable-alerts-section" class="app-section hidden">
+                <h2>Programar Alertas</h2>
+                <p class="text-gray-600 mb-4">Crea y gestiona alertas personalizadas para los usuarios.</p>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm mb-6 dark:bg-gray-800">
+                    <h3 class="mb-3">Nueva Alerta</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <input type="text" id="alert-message" placeholder="Mensaje de la alerta" class="p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        <select id="alert-type" class="p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option value="general">General</option>
+                            <option value="mantenimiento">Mantenimiento</option>
+                            <option value="urgente">Urgente</option>
+                        </select>
+                        <input type="datetime-local" id="alert-schedule" class="p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white" />
+                        <select id="alert-target" class="p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option value="all">Todos los Conductores</option>
+                            <!-- Opciones para conductores específicos se cargarían dinámicamente -->
+                        </select>
+                    </div>
+                    <button id="save-alert-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 mr-2 icon-button"><span class="material-icons">save</span></button>
+                    <button id="send-test-alert-btn" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors duration-200 icon-button"><span class="material-icons">send</span></button>
+                </div>
+
+                <h3 class="mt-6 mb-3">Alertas Programadas</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white rounded-lg shadow-sm dark:bg-gray-800">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider dark:bg-gray-700 dark:text-gray-300">
+                                <th class="py-3 px-4 rounded-tl-lg">Mensaje</th>
+                                <th class="py-3 px-4">Tipo</th>
+                                <th class="py-3 px-4">Fecha/Hora</th>
+                                <th class="py-3 px-4">Dirigido a</th>
+                                <th class="py-3 px-4 rounded-tr-lg">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduled-alerts-list" class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Scheduled alerts will be rendered here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <!-- **** SECCIONES CONDUCTOR **** -->
             <section id="driver-home-section" class="app-section hidden">
                 <h2>Mi Vehículo</h2>
@@ -210,12 +340,15 @@
                 <div class="bg-white p-6 rounded-lg shadow-sm flex flex-col md:flex-row items-center gap-4 dark:bg-gray-800">
                     <input id="deduct-desc" class="flex-1 p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Descripción (ej. Reparación de llanta)" />
                     <input id="deduct-amount" type="number" step="0.01" class="w-24 p-2 border rounded-md dark:bg-gray-600 dark:border-gray-500 dark:text-white" placeholder="Monto" />
-                    <button id="send-deduction-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200">Enviar Solicitud</button>
+                    <button id="send-deduction-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-200 icon-button"><span class="material-icons">send</span></button>
                 </div>
 
                 <h3 class="mt-6 mb-3">Mis Deducciones</h3>
                 <div id="driver-deductions-list" class="bg-white p-6 rounded-lg shadow-sm space-y-2 text-gray-700 dark:bg-gray-800">
                     <p>No hay deducciones registradas.</p>
+                </div>
+                <div id="driver-historical-accounts" class="mt-6">
+                    <!-- Historical accounts will be rendered here -->
                 </div>
             </section>
         </main>
@@ -228,6 +361,72 @@
             <button id="message-modal-close">Aceptar</button>
         </div>
     </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase variables (provided by Canvas environment)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, db, auth, userId;
+
+        // Initialize Firebase and authenticate
+        async function initFirebase() {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase authenticated. User ID:", userId);
+                        // Now that Firebase is ready, you can start using it in your app logic
+                        // For example, if you need to fetch data immediately after auth:
+                        // fetchInitialData(userId);
+                    } else {
+                        console.log("No user signed in. Attempting anonymous sign-in.");
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase or authenticating:", error);
+                // Optionally show an error message to the user
+            }
+        }
+
+        initFirebase();
+
+        // Make db, auth, userId, and other Firestore functions globally available
+        // This is a simplified approach for demonstration. In a larger app,
+        // you might use a context/state management pattern.
+        window.db = db;
+        window.auth = auth;
+        window.getFirestore = getFirestore;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.addDoc = addDoc;
+        window.setDoc = setDoc;
+        window.updateDoc = updateDoc;
+        window.deleteDoc = deleteDoc;
+        window.onSnapshot = onSnapshot;
+        window.collection = collection;
+        window.query = query;
+        window.where = where;
+        window.getDocs = getDocs;
+        window.serverTimestamp = serverTimestamp; // Make serverTimestamp available
+        window.getUserId = () => auth.currentUser?.uid || 'anonymous'; // Helper to get current user ID
+        window.getAppId = () => appId; // Helper to get current app ID
+    </script>
 
     <!-- Script para registrar el Service Worker -->
     <script src="service-worker.js"></script>
