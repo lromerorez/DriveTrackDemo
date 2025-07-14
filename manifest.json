@@ -1,0 +1,21 @@
+{
+  "icons": [
+    {
+      "sizes": "192x192",
+      "type": "image/png",
+      "src": "https://placehold.co/192x192/3498db/000000?text=DT"
+    },
+    {
+      "sizes": "512x512",
+      "type": "image/png",
+      "src": "https://placehold.co/512x512/3498db/000000?text=DT"
+    }
+  ],
+  "name": "DriveTrack",
+  "background_color": "#ffffff",
+  "theme_color": "#3982f6",
+  "short_name": "DriveTrack",
+  "start_url": "/",
+  "standalone": "display",
+  "display": "standalone"
+}
